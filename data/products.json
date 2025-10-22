@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1760253567107,
+    "name": "Rava",
+    "sku": "56478",
+    "price": 40,
+    "stock": 67,
+    "gst": 18,
+    "lowStockThreshold": 10
+  },
+  {
+    "id": 1760426951274,
+    "name": "Turdal",
+    "sku": "56477",
+    "price": 34,
+    "stock": 5,
+    "gst": 5,
+    "lowStockThreshold": 10
+  }
+]

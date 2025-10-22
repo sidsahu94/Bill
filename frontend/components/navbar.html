@@ -1,0 +1,35 @@
+<!-- frontend/components/navbar.html -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top" role="navigation" aria-label="Main navigation">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="/index.html">💼 Bill</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Toggle navigation</span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto align-items-center">
+        <li class="nav-item"><a class="nav-link" href="/pages/dashboard.html">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="/pages/customers.html">Customers</a></li>
+        <li class="nav-item"><a class="nav-link" href="/pages/products.html">Products</a></li>
+        <li class="nav-item"><a class="nav-link" href="/pages/billing.html">Billing</a></li>
+        <li class="nav-item"><a class="nav-link" href="/pages/history.html">Bill History</a></li>
+        <li class="nav-item"><a class="nav-link" href="/pages/analytics.html">Analytics</a></li>
+        <li class="nav-item"><a class="nav-link" href="/pages/settings.html">Settings</a></li>
+
+        <!-- AUTH AREA: elements start hidden and are toggled by navbar.js -->
+        <li id="nav-auth" class="nav-item d-flex align-items-center">
+          <a id="loginLink" class="nav-link d-none" href="/pages/login.html">Login</a>
+          <a id="registerLink" class="nav-link d-none ms-2" href="/pages/register.html">Register</a>
+
+          <!-- show username when logged in -->
+          <span id="nav-username" class="navbar-text text-white me-2 d-none"></span>
+
+          <!-- large visible logout button -->
+          <button id="logoutBtn" class="btn btn-light btn-sm ms-1 d-none" type="button" aria-label="Logout">Logout</button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

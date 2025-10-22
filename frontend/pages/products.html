@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Products - Bill</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div id="navbar-placeholder"></div>
+
+
+
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2>🧾 Products</h2>
+      <input id="productSearch" class="form-control form-control-sm d-inline-block" style="width:260px" placeholder="Search by name or SKU">
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <div class="card p-3">
+          <h5>Add / Edit Product</h5>
+          <form id="productForm">
+            <input type="hidden" id="productId">
+            <div class="mb-2">
+              <label class="form-label">Name</label>
+              <input id="name" class="form-control" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">SKU</label>
+              <input id="sku" class="form-control" required>
+            </div>
+            <div class="mb-2 row">
+              <div class="col">
+                <label class="form-label">Price (₹)</label>
+                <input id="price" type="number" min="0" step="0.01" class="form-control" required>
+              </div>
+              <div class="col">
+                <label class="form-label">Stock</label>
+                <input id="stock" type="number" min="0" step="1" class="form-control" required>
+              </div>
+            </div>
+            <div class="mb-2 row">
+              <div class="col">
+                <label class="form-label">GST %</label>
+                <input id="gst" type="number" min="0" step="0.01" class="form-control" value="18" required>
+              </div>
+              <div class="col">
+                <label class="form-label">Low stock threshold</label>
+                <input id="lowStockThreshold" type="number" min="0" step="1" class="form-control" value="10">
+              </div>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button class="btn btn-primary" id="saveProductBtn" type="submit">Save</button>
+              <button class="btn btn-secondary" id="resetFormBtn" type="button">Reset</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card p-3">
+          <h5>Import / Export</h5>
+          <div class="mb-2">
+            <label class="form-label">Import products (CSV)</label>
+            <input id="importCsv" type="file" accept=".csv" class="form-control">
+            <small class="text-muted">CSV columns: name,sku,price,stock,gst,lowStockThreshold</small>
+          </div>
+
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-outline-success" id="exportCsvBtn">Export CSV</button>
+            <button class="btn btn-outline-primary" id="exportPdfBtn">Export PDF</button>
+            <button class="btn btn-outline-warning" id="downloadJsonBtn">Backup JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3">
+      <div class="d-flex justify-content-between mb-2">
+        <h6>Product List</h6>
+        <div><span class="badge bg-info" id="lowStockCount">0 low stock</span></div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover" id="productsTable">
+          <thead>
+            <tr>
+              <th>SKU</th><th>Name</th><th>Price (₹)</th><th>Stock</th><th>GST %</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+ 
+
+
+<script src="/js/navbar.js"></script>
+  <script src="/js/products.js"></script>
+ 
+</body>
+</html>

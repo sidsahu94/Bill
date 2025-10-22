@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1760253656447,
+    "invoiceNo": "INV-20251012-1",
+    "date": "2025-10-12T07:20:56.399Z",
+    "invoiceNumber": "INV-20251012-859",
+    "customerId": "1760253604057",
+    "items": [
+      {
+        "productId": "1760253567107",
+        "qty": 1,
+        "price": 40,
+        "gst": 18
+      }
+    ],
+    "discount": 0,
+    "paymentMethod": "Cash",
+    "total": 47.2
+  },
+  {
+    "id": 1760255876222,
+    "invoiceNo": "INV-20251012-2",
+    "date": "2025-10-12T07:57:56.176Z",
+    "invoiceNumber": "INV-20251012-593",
+    "customerId": "1760253604057",
+    "items": [
+      {
+        "productId": "1760253567107",
+        "qty": 6,
+        "price": 40,
+        "gst": 18
+      }
+    ],
+    "discount": 3,
+    "paymentMethod": "UPI",
+    "total": 274.7
+  },
+  {
+    "id": 1760427013041,
+    "invoiceNo": "INV-20251014-3",
+    "date": "2025-10-14T07:30:13.025Z",
+    "invoiceNumber": "INV-20251014-187",
+    "customerId": "1760253604057",
+    "items": [
+      {
+        "productId": "1760253567107",
+        "qty": 4,
+        "price": 40,
+        "gst": 18
+      },
+      {
+        "productId": "1760426951274",
+        "qty": 8,
+        "price": 34,
+        "gst": 5
+      }
+    ],
+    "discount": 5,
+    "paymentMethod": "Credit",
+    "total": 450.68
+  },
+  {
+    "id": 1760610583457,
+    "invoiceNumber": "INV-20251016-266",
+    "customer": {
+      "id": 1760606801210,
+      "name": "ayuzh",
+      "email": "ayuzh786@gmail.com",
+      "contact": "7689478578",
+      "address": "234,hdi,kurla,kamani,sakinaka,mumbai=678594",
+      "gstin": "76966"
+    },
+    "items": [
+      {
+        "productId": 1760426951274,
+        "sku": "56477",
+        "name": "Turdal",
+        "price": 34,
+        "gst": 5,
+        "qty": 10,
+        "subtotal": 340,
+        "itemTotal": 357
+      }
+    ],
+    "discount": 0,
+    "paymentMethod": "Cash",
+    "totalAmount": 357,
+    "total": 357,
+    "date": "2025-10-16T10:29:43.448Z",
+    "createdAt": "2025-10-16T10:29:43.457Z"
+  }
+]

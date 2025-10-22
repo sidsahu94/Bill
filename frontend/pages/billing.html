@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Billing - Bill</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- App icons & manifest (ensure these files exist under /frontend/icons/) -->
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="manifest" href="/manifest.json">
+
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="navbar-placeholder"></div>
+  <main class="container mt-4" id="main">
+    <h2>💳 Create Invoice</h2>
+
+    <!-- Customer row -->
+    <div class="card p-3 mb-3">
+      <form id="billingHeader" aria-label="Invoice header">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label for="customerSelect" class="form-label">Customer</label>
+            <select id="customerSelect" class="form-select" title="Select customer" aria-required="true">
+              <!-- populated by JS -->
+            </select>
+          </div>
+
+          <div class="col-md-4">
+            <label for="customerGST" class="form-label">GSTIN</label>
+            <input id="customerGST" class="form-control" readonly title="Customer GSTIN" placeholder="Customer GSTIN" aria-readonly="true" />
+          </div>
+
+          <div class="col-md-4">
+            <label for="customerAddress" class="form-label">Address</label>
+            <input id="customerAddress" class="form-control" readonly title="Customer address" placeholder="Customer address" aria-readonly="true" />
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Products -->
+    <div class="card p-3 mb-3" aria-label="Invoice products">
+      <h5>Products</h5>
+      <table class="table table-sm table-bordered" id="invoiceTable" aria-describedby="productsHelp">
+        <thead>
+          <tr>
+            <th scope="col">SKU / Name</th>
+            <th scope="col">Price</th>
+            <th scope="col">Stock</th>
+            <th scope="col">GST %</th>
+            <th scope="col">Qty</th>
+            <th scope="col">Subtotal</th>
+            <th scope="col">Total</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div id="productsHelp" class="form-text mb-2">Click “Add Product” to add product rows. Quantity auto-adjusts to stock.</div>
+      <button type="button" class="btn btn-primary btn-sm mb-2" id="addProductBtn">➕ Add Product</button>
+    </div>
+
+    <!-- Footer controls -->
+    <div class="card p-3 mb-3" aria-label="Invoice totals and actions">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="discount" class="form-label">Discount (flat or %)</label>
+          <input id="discount" type="number" class="form-control" placeholder="0" title="Discount: if ≤100 treated as percent" />
+        </div>
+
+        <div class="col-md-3">
+          <label for="paymentMethod" class="form-label">Payment Method</label>
+          <select id="paymentMethod" class="form-select" title="Select payment method">
+            <option value="Cash">Cash</option>
+            <option value="UPI">UPI</option>
+            <option value="Card">Card</option>
+            <option value="Credit">Credit</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label for="invoiceNumber" class="form-label">Invoice #</label>
+          <input id="invoiceNumber" class="form-control" readonly title="Generated invoice number" placeholder="INV-YYYYMMDD-XXX" aria-readonly="true" />
+        </div>
+
+        <div class="col-md-3">
+          <label for="totalAmount" class="form-label">Total Amount</label>
+          <input id="totalAmount" class="form-control" readonly title="Final invoice total" placeholder="₹0.00" aria-readonly="true" />
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-3">
+      <button class="btn btn-success" id="saveInvoiceBtn">💾 Save Invoice</button>
+      <button class="btn btn-outline-primary" id="printInvoiceBtn">🖨 Print</button>
+      <button class="btn btn-outline-secondary" id="downloadPdfBtn">📄 Download PDF</button>
+      <button class="btn btn-outline-warning" id="shareBtn">🔗 Share</button>
+    </div>
+
+    <!-- QR code: accessible image role -->
+    <div id="qrcode" role="img" aria-label="QR code for the current invoice" class="mt-3"></div>
+  </main>
+
+  <!-- libs (CDN globals) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Local app script: ensure this file exists at /frontend/js/billing.js -->
+  <script src="/js/billing.js"></script>
+  <script src="/js/navbar.js?v=2.0"></script>
+
+</body>
+</html>

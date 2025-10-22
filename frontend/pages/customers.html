@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Customers - Bill</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="navbar-placeholder"></div>
+
+
+
+  <div class="container py-4">
+    <div class="d-flex justify-content-between mb-3">
+      <h2>👥 Customers</h2>
+      <input id="customerSearch" class="form-control form-control-sm" style="width:260px" placeholder="Search by name/email/contact">
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <div class="card p-3">
+          <h5>Add / Edit Customer</h5>
+          <form id="customerForm">
+            <input type="hidden" id="customerId">
+            <div class="mb-2">
+              <label class="form-label">Name</label>
+              <input id="name" class="form-control" required>
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Email</label>
+              <input id="email" type="email" class="form-control">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Contact</label>
+              <input id="contact" class="form-control">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">Address</label>
+              <input id="address" class="form-control">
+            </div>
+            <div class="mb-2">
+              <label class="form-label">GSTIN</label>
+              <input id="gstin" class="form-control">
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-primary" type="submit">Save</button>
+              <button class="btn btn-secondary" type="button" id="resetFormBtn">Reset</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card p-3">
+          <h5>Export / Import</h5>
+          <div class="mb-2">
+            <label>Import CSV</label>
+            <input type="file" id="importCsv" class="form-control" accept=".csv">
+            <small class="text-muted">CSV columns: name,email,contact,address,gstin</small>
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn btn-outline-success" id="exportCsvBtn">Export CSV</button>
+            <button class="btn btn-outline-warning" id="downloadJsonBtn">Backup JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3">
+      <h5>Customer List</h5>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover" id="customersTable">
+          <thead>
+            <tr>
+              <th>Name</th><th>Email</th><th>Contact</th><th>Address</th><th>GSTIN</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+
+<script src="/js/navbar.js?v=2.0"></script>
+
+  <script src="/js/customers.js"></script>
+  
+
+</body>
+</html>
