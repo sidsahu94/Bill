@@ -1,5 +1,4 @@
 // frontend/js/billing.js
-// Billing UI + API calls (includes Authorization header for protected endpoints)
 
 let productsCache = [];
 let customersCache = [];
@@ -14,14 +13,30 @@ function makeHeaders(json = true) {
   return headers;
 }
 
-document.addEventListener('DOMContentLoaded', initBilling);
-
-async function initBilling() {
-  await loadProducts();
-  await loadCustomers();
+document.addEventListener('DOMContentLoaded', async () => {
+  renderSkeleton();
+  await Promise.all([loadProducts(), loadCustomers()]);
   generateInvoiceNumber();
   bindEvents();
-  renderInvoiceTable();
+  
+  // Initialize with one empty row
+  if(invoiceItems.length === 0) addProduct();
+});
+
+function renderSkeleton() {
+  const tbody = document.getElementById('invoiceTbody');
+  if (!tbody) return;
+  tbody.innerHTML = `
+    <tr>
+      <td data-label="Product"><div class="skeleton skeleton-text"></div></td>
+      <td data-label="Price"><div class="skeleton skeleton-text"></div></td>
+      <td data-label="GST %"><div class="skeleton skeleton-text"></div></td>
+      <td data-label="Qty"><div class="skeleton skeleton-text"></div></td>
+      <td data-label="Subtotal"><div class="skeleton skeleton-text"></div></td>
+      <td data-label="Total"><div class="skeleton skeleton-text"></div></td>
+      <td data-label="Action"><div class="skeleton skeleton-btn"></div></td>
+    </tr>
+  `;
 }
 
 async function loadProducts() {
@@ -29,9 +44,9 @@ async function loadProducts() {
     const res = await fetch('/api/products', { headers: makeHeaders(false) });
     if (!res.ok) throw new Error('Failed to load products');
     productsCache = await res.json();
-  } catch (err) {
-    console.error('loadProducts error', err);
-    productsCache = [];
+  } catch (err) { 
+    console.error(err);
+    productsCache = []; 
   }
 }
 
@@ -40,47 +55,53 @@ async function loadCustomers() {
     const res = await fetch('/api/customers', { headers: makeHeaders(false) });
     if (!res.ok) throw new Error('Failed to load customers');
     customersCache = await res.json();
-    const customerSelect = document.getElementById('customerSelect');
-    if (!customerSelect) return;
-    customerSelect.innerHTML = '<option value="">Select Customer</option>';
+    
+    const select = document.getElementById('customerSelect');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">Walk-in / General Customer</option>';
     customersCache.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
-      opt.textContent = c.name || c.email || (`Customer ${c.id}`);
-      customerSelect.appendChild(opt);
+      opt.textContent = `${c.name} (${c.contact || c.email || 'N/A'})`;
+      select.appendChild(opt);
     });
 
-    customerSelect.addEventListener('change', e => {
+    select.addEventListener('change', e => {
       const selected = customersCache.find(c => String(c.id) === String(e.target.value));
-      if (selected) {
-        document.getElementById('customerGST').value = selected.gstin || '';
-        document.getElementById('customerAddress').value = selected.address || '';
-      } else {
-        document.getElementById('customerGST').value = '';
-        document.getElementById('customerAddress').value = '';
-      }
+      document.getElementById('customerGST').value = selected?.gstin || '';
+      document.getElementById('customerAddress').value = selected?.address || '';
     });
-  } catch (err) {
-    console.error('loadCustomers error', err);
-    customersCache = [];
+  } catch (err) { 
+    console.error(err);
+    customersCache = []; 
   }
 }
 
 function bindEvents() {
-  const el = id => document.getElementById(id);
-  el('addProductBtn')?.addEventListener('click', addProduct);
-  el('discount')?.addEventListener('input', renderInvoiceTable);
-  el('saveInvoiceBtn')?.addEventListener('click', saveInvoice);
-  el('printInvoiceBtn')?.addEventListener('click', printInvoice);
-  el('downloadPdfBtn')?.addEventListener('click', downloadPdf);
-  el('shareBtn')?.addEventListener('click', shareInvoice);
+  document.getElementById('addProductBtn')?.addEventListener('click', addProduct);
+  document.getElementById('discount')?.addEventListener('input', renderInvoiceTable);
+  document.getElementById('discountType')?.addEventListener('change', renderInvoiceTable);
+  document.getElementById('saveInvoiceBtn')?.addEventListener('click', saveInvoice);
+  
+  // PDF Engine Hook
+  document.getElementById('printInvoiceBtn')?.addEventListener('click', async () => {
+    if (invoiceItems.length === 0 || !invoiceItems[0].productId) return alert('Invoice is empty.');
+    const data = getCompiledInvoiceData();
+    if (window.generateProfessionalPDF) {
+      await window.generateProfessionalPDF(data, 'print');
+    } else {
+      alert('PDF Engine is still loading or missing. Please ensure pdfEngine.js is linked.');
+    }
+  });
 }
 
 function generateInvoiceNumber() {
-  const timestamp = Date.now();
-  currentInvoiceNumber = 'INV-' + timestamp.toString();
-  const el = document.getElementById('invoiceNumber');
-  if (el) el.value = currentInvoiceNumber;
+  const timestamp = Date.now().toString().slice(-6);
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  currentInvoiceNumber = `INV-${dateStr}-${timestamp}`;
+  const display = document.getElementById('invoiceNumberDisplay');
+  if (display) display.textContent = currentInvoiceNumber;
 }
 
 function addProduct() {
@@ -89,155 +110,195 @@ function addProduct() {
 }
 
 function renderInvoiceTable() {
-  const tbody = document.querySelector('#invoiceTable tbody');
+  const tbody = document.getElementById('invoiceTbody');
   if (!tbody) return;
   tbody.innerHTML = '';
+
+  let grandTotal = 0;
 
   invoiceItems.forEach((item, idx) => {
     const tr = document.createElement('tr');
 
+    // Product Select
     const productSelect = document.createElement('select');
-    productSelect.classList.add('form-select', 'form-select-sm');
-    productSelect.innerHTML = '<option value="">Select Product</option>';
+    productSelect.className = 'form-select form-select-sm';
+    productSelect.innerHTML = '<option value="">Search product...</option>';
+    
     productsCache.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.id;
-      opt.textContent = `${p.sku || ''} / ${p.name || ''}`;
+      opt.textContent = `${p.name} [Stock: ${p.stock}]`;
       if (String(p.id) === String(item.productId)) opt.selected = true;
+      if (p.stock <= 0 && String(p.id) !== String(item.productId)) opt.disabled = true;
       productSelect.appendChild(opt);
     });
+
     productSelect.addEventListener('change', e => {
       const selected = productsCache.find(p => String(p.id) === String(e.target.value));
       if (selected) {
-        invoiceItems[idx].productId = selected.id;
-        invoiceItems[idx].name = selected.name;
-        invoiceItems[idx].price = Number(selected.price) || 0;
-        invoiceItems[idx].stock = Number(selected.stock) || 0;
-        invoiceItems[idx].gst = Number(selected.gst) || 0;
+        invoiceItems[idx] = { 
+          ...invoiceItems[idx], 
+          productId: selected.id, 
+          name: selected.name, 
+          price: Number(selected.price), 
+          stock: Number(selected.stock), 
+          gst: Number(selected.gst) 
+        };
       } else {
         invoiceItems[idx] = { productId: '', name: '', price: 0, stock: 0, gst: 0, qty: 1 };
       }
       renderInvoiceTable();
     });
 
-    const priceTd = document.createElement('td'); priceTd.textContent = (item.price || 0).toFixed(2);
-    const stockTd = document.createElement('td'); stockTd.textContent = item.stock || 0;
-    const gstTd = document.createElement('td'); gstTd.textContent = item.gst || 0;
+    // Calculations (Strict financial precision logic)
+    const subtotal = item.price * item.qty;
+    const gstAmount = subtotal * (item.gst / 100);
+    const totalWithGst = subtotal + gstAmount;
+    grandTotal += totalWithGst;
 
+    // Quantity Input with Stock Bounds Protection
     const qtyInput = document.createElement('input');
-    qtyInput.type = 'number'; qtyInput.min = 1; qtyInput.value = item.qty || 1;
-    qtyInput.classList.add('form-control', 'form-control-sm');
+    qtyInput.type = 'number'; 
+    qtyInput.min = 1; 
+    qtyInput.max = item.stock || 999;
+    qtyInput.value = item.qty;
+    qtyInput.className = 'form-control form-control-sm text-center';
+    
     qtyInput.addEventListener('input', e => {
-      invoiceItems[idx].qty = parseInt(e.target.value) || 1;
+      let val = parseInt(e.target.value) || 1;
+      if (item.stock > 0 && val > item.stock) {
+        val = item.stock; 
+        alert(`Only ${item.stock} units available in stock.`);
+      }
+      invoiceItems[idx].qty = val;
       renderInvoiceTable();
     });
 
-    const subtotal = (item.price || 0) * (item.qty || 0);
-    const subtotalTd = document.createElement('td'); subtotalTd.textContent = subtotal.toFixed(2);
+    // Delete Button
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-outline-danger w-100';
+    delBtn.textContent = 'Remove';
+    delBtn.onclick = () => { invoiceItems.splice(idx, 1); renderInvoiceTable(); };
 
-    const totalWithGst = subtotal + (subtotal * (item.gst || 0) / 100);
-    const totalTd = document.createElement('td'); totalTd.textContent = totalWithGst.toFixed(2);
-
-    const actionBtn = document.createElement('button');
-    actionBtn.classList.add('btn', 'btn-sm', 'btn-danger');
-    actionBtn.textContent = '❌';
-    actionBtn.addEventListener('click', () => { invoiceItems.splice(idx, 1); renderInvoiceTable(); });
-
-    tr.appendChild(createTdWithContent(productSelect));
-    tr.appendChild(priceTd);
-    tr.appendChild(stockTd);
-    tr.appendChild(gstTd);
-    tr.appendChild(createTdWithContent(qtyInput));
-    tr.appendChild(subtotalTd);
-    tr.appendChild(totalTd);
-    tr.appendChild(createTdWithContent(actionBtn));
+    // Append cells using the mobile-responsive helper
+    tr.appendChild(createCell(productSelect, 'Product'));
+    tr.appendChild(createCell(`₹${item.price.toFixed(2)}`, 'Price'));
+    tr.appendChild(createCell(`${item.gst}%`, 'GST %'));
+    tr.appendChild(createCell(qtyInput, 'Qty'));
+    tr.appendChild(createCell(`₹${subtotal.toFixed(2)}`, 'Subtotal'));
+    tr.appendChild(createCell(`₹${totalWithGst.toFixed(2)}`, 'Total', 'fw-bold text-primary'));
+    tr.appendChild(createCell(delBtn, 'Action'));
 
     tbody.appendChild(tr);
   });
 
-  let total = 0;
-  invoiceItems.forEach(i => total += (i.price || 0) * (i.qty || 0) * (1 + (i.gst || 0) / 100));
-  const discount = parseFloat(document.getElementById('discount')?.value) || 0;
-  if (discount > 0) total = total - discount;
-  const totalEl = document.getElementById('totalAmount');
-  if (totalEl) totalEl.value = Number(total || 0).toFixed(2);
+  // Calculate Strict Discount based on explicit type
+  const discountInput = parseFloat(document.getElementById('discount')?.value) || 0;
+  const discountType = document.getElementById('discountType')?.value || 'flat';
+
+  if (discountInput > 0) {
+    if (discountType === 'percentage') {
+      if (discountInput > 100) {
+         alert('Percentage discount cannot exceed 100%');
+         document.getElementById('discount').value = 100;
+         grandTotal = 0;
+      } else {
+         grandTotal = grandTotal - (grandTotal * (discountInput / 100));
+      }
+    } else { // flat
+      if (discountInput > grandTotal) {
+         alert('Flat discount cannot exceed the total bill amount.');
+         document.getElementById('discount').value = grandTotal.toFixed(2);
+         grandTotal = 0;
+      } else {
+         grandTotal = grandTotal - discountInput;
+      }
+    }
+  }
+
+  // Update Display
+  grandTotal = Math.max(0, grandTotal);
+  if (document.getElementById('totalAmount')) {
+    document.getElementById('totalAmount').value = grandTotal;
+  }
+  if (document.getElementById('totalAmountDisplay')) {
+    document.getElementById('totalAmountDisplay').textContent = `₹${grandTotal.toFixed(2)}`;
+  }
 }
 
-function createTdWithContent(content) {
+// Helper to inject data-label for mobile card views
+function createCell(content, label, customClass = '') {
   const td = document.createElement('td');
-  if (content instanceof HTMLElement) td.appendChild(content);
-  else td.textContent = content;
+  td.setAttribute('data-label', label);
+  if(customClass) td.className = customClass;
+  if (content instanceof HTMLElement) {
+    td.appendChild(content);
+  } else {
+    td.textContent = content;
+  }
   return td;
 }
 
-async function saveInvoice() {
-  if (invoiceItems.length === 0) return alert('Add products first');
-  const invoiceData = {
+// Gathers current UI state into an object identical to what the DB returns
+// so the PDF engine can process it accurately before saving.
+function getCompiledInvoiceData() {
+  const custId = document.getElementById('customerSelect')?.value;
+  const customer = customersCache.find(c => String(c.id) === String(custId)) || null;
+  
+  return {
     invoiceNumber: currentInvoiceNumber,
-    customerId: document.getElementById('customerSelect')?.value || null,
-    discount: parseFloat(document.getElementById('discount')?.value) || 0,
+    date: new Date().toISOString(),
+    customer: customer,
     paymentMethod: document.getElementById('paymentMethod')?.value || 'Cash',
+    discount: parseFloat(document.getElementById('discount')?.value) || 0,
     totalAmount: parseFloat(document.getElementById('totalAmount')?.value) || 0,
-    items: invoiceItems.map(i => ({ productId: i.productId, qty: i.qty, price: i.price, gst: i.gst }))
+    items: invoiceItems 
+  };
+}
+
+async function saveInvoice() {
+  const btn = document.getElementById('saveInvoiceBtn');
+  if (invoiceItems.length === 0 || !invoiceItems[0].productId) {
+    return alert('Please add valid products to the invoice.');
+  }
+  
+  // Optimistic UX feedback
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...`;
+
+  const payload = {
+    invoiceNumber: currentInvoiceNumber,
+    customerId: document.getElementById('customerSelect').value || null,
+    discount: parseFloat(document.getElementById('discount').value) || 0,
+    discountType: document.getElementById('discountType').value || 'flat',
+    paymentMethod: document.getElementById('paymentMethod').value || 'Cash',
+    date: new Date().toISOString(),
+    items: invoiceItems.map(i => ({ productId: i.productId, qty: i.qty })) // Send only ID and Qty to prevent price manipulation
   };
 
   try {
-    const res = await fetch('/api/billing/create', {
-      method: 'POST',
-      headers: makeHeaders(true),
-      body: JSON.stringify(invoiceData)
+    const res = await fetch('/api/billing/create', { 
+      method: 'POST', 
+      headers: makeHeaders(true), 
+      body: JSON.stringify(payload) 
     });
-    const body = await res.json().catch(()=>({message:'Unknown'}));
-    if (!res.ok) return alert(body.message || 'Save failed');
-    alert('Invoice saved!');
-    window.dispatchEvent(new CustomEvent('invoicesUpdated', { detail: body }));
-    generateInvoiceNumber();
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.message || 'Transaction Failed');
+    
+    alert('Invoice saved successfully! Stock has been updated.');
+    
+    // Reset Engine
     invoiceItems = [];
-    renderInvoiceTable();
+    document.getElementById('discount').value = '';
+    generateInvoiceNumber();
+    await loadProducts(); // Refresh stock immediately
+    addProduct();
+    
   } catch (err) {
-    console.error('saveInvoice error', err);
-    alert('Save failed');
+    alert(`Error: ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Confirm & Save';
   }
-}
-
-function printInvoice() {
-  const win = window.open('', '_blank');
-  if (!win) return alert('Popup blocked');
-  const html = `
-    <html><head><title>Invoice</title>
-      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    </head>
-    <body class="p-4">
-      <h3>Invoice: ${currentInvoiceNumber}</h3>
-      ${document.getElementById('invoiceTable')?.outerHTML || ''}
-      <p>Total: ₹${document.getElementById('totalAmount')?.value || '0.00'}</p>
-    </body></html>`;
-  win.document.write(html);
-  win.document.close();
-  win.print();
-}
-
-async function downloadPdf() {
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.text(`Invoice #${currentInvoiceNumber}`, 10, 10);
-    let y = 20;
-    invoiceItems.forEach(item => {
-      doc.text(`${item.name} x ${item.qty} = ₹${(item.price * item.qty * (1 + (item.gst || 0) / 100)).toFixed(2)}`, 10, y);
-      y += 7;
-    });
-    doc.text(`Total: ₹${document.getElementById('totalAmount')?.value || '0.00'}`, 10, y + 7);
-    doc.save(`${currentInvoiceNumber}.pdf`);
-  } catch (err) {
-    console.error('downloadPdf error', err);
-    alert('Failed to create PDF');
-  }
-}
-
-function shareInvoice() {
-  const text = `Invoice #${currentInvoiceNumber}\nTotal: ₹${document.getElementById('totalAmount')?.value || '0.00'}`;
-  navigator.clipboard.writeText(text)
-    .then(() => alert('Invoice details copied to clipboard'))
-    .catch(err => console.error(err));
 }

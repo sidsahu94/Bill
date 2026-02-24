@@ -1,90 +1,59 @@
-// frontend/service-worker.js
-const CACHE_NAME = 'bill-app-cache-v4';
+// frontend/sw.js
+const CACHE_NAME = 'bill-saas-cache-v5';
 const ASSETS_TO_CACHE = [
-  '/', // keep generic pages cached
+  '/',
   '/index.html',
-  '/pages/dashboard.html',
-  '/pages/products.html',
-  '/pages/customers.html',
-  '/pages/billing.html',
-  '/pages/history.html',
-  '/pages/analytics.html',
-  '/pages/settings.html',
-  // NOTE: intentionally DO NOT include /components/navbar.html or /js/navbar.js here
+  '/pages/login.html',
+  '/pages/register.html',
   '/css/style.css'
+  // We explicitly do NOT cache the dashboard or js files aggressively here 
+  // to ensure you always get the latest SaaS updates on refresh.
 ];
 
-// Install: cache selected assets
 self.addEventListener('install', event => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    for (const url of ASSETS_TO_CACHE) {
-      try {
-        const res = await fetch(url, {cache: 'no-store'});
-        if (res && res.ok) await cache.put(url, res.clone());
-      } catch (err) {
-        console.warn('SW install: failed to cache', url, err && err.message);
-      }
-    }
-    self.skipWaiting();
-  })());
+  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS_TO_CACHE))
+  );
 });
 
-// Activate: remove old caches
 self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
-    self.clients.claim();
-  })());
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(
+      keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+    ))
+  );
+  self.clients.claim();
 });
 
-// Fetch: use network-first for navbar and navbar JS, network-first for others too but fallback to cache
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
-
   const reqUrl = new URL(event.request.url);
 
-  // Force network for navbar component and navbar script (always get latest)
-  if (reqUrl.pathname.endsWith('/components/navbar.html') || reqUrl.pathname.endsWith('/js/navbar.js')) {
-    event.respondWith((async () => {
-      try {
-        const networkResp = await fetch(event.request);
-        // update cache (optional) but we prefer always fresh
-        try {
-          const cache = await caches.open(CACHE_NAME);
-          if (networkResp && networkResp.ok && reqUrl.origin === location.origin) {
-            cache.put(event.request, networkResp.clone()).catch(()=>{});
-          }
-        } catch(e){}
-        return networkResp;
-      } catch (err) {
-        const cached = await caches.match(event.request);
-        if (cached) return cached;
-        return new Response('Network error (offline)', { status: 503, statusText: 'Service Unavailable' });
-      }
-    })());
+  // CRITICAL FIX: Never cache API calls. Financial data must be real-time.
+  if (reqUrl.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
     return;
   }
 
-  // Default behavior: network-first, fallback to cache
-  event.respondWith((async () => {
-    try {
-      const networkResp = await fetch(event.request);
-      if (networkResp && networkResp.ok) {
-        const cache = await caches.open(CACHE_NAME);
-        const reqOrigin = new URL(event.request.url).origin;
-        if (reqOrigin === location.origin) {
-          cache.put(event.request, networkResp.clone()).catch(()=>{});
+  // UI Assets: Network-first, fallback to cache
+  event.respondWith(
+    fetch(event.request)
+      .then(networkResp => {
+        if (networkResp && networkResp.ok && event.request.method === 'GET') {
+          const resClone = networkResp.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
         }
-      }
-      return networkResp;
-    } catch (err) {
-      const cached = await caches.match(event.request);
-      if (cached) return cached;
-      const fallback = await caches.match('/index.html');
-      if (fallback) return fallback;
-      return new Response('Network error (offline)', { status: 503, statusText: 'Service Unavailable' });
-    }
-  })());
+        return networkResp;
+      })
+      .catch(async () => {
+        const cachedResp = await caches.match(event.request);
+        if (cachedResp) return cachedResp;
+        
+        // If offline and requesting a page, return the index/login
+        if (event.request.mode === 'navigate') {
+          return caches.match('/index.html');
+        }
+        return new Response('Network error (offline)', { status: 503 });
+      })
+  );
 });

@@ -1,291 +1,260 @@
-/* body {
-  font-family: 'Segoe UI', sans-serif;
-  padding-top: 75px;
+/* frontend/css/style.css */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Core Luxury Palette */
+  --bg-deep-space: #030712; 
+  --wine-red: #5C001E;
+  --maroon-glow: rgba(114, 47, 55, 0.4);
+  --royal-blue: #0F172A;
+  --royal-glow: rgba(29, 78, 216, 0.3);
+  
+  --emerald-hwb: hwb(155 2% 32%); 
+  --teal-hwb: hwb(182 2% 32%);    
+  
+  /* Metallics & Accents */
+  --gold-metallic: #D4AF37;
+  --gold-light: #FDE047;
+  --gold-muted: rgba(212, 175, 55, 0.3);
+  
+  /* Glass Surfaces */
+  --surface-glass: rgba(15, 23, 42, 0.5);
+  --surface-glass-hover: rgba(15, 23, 42, 0.7);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-gold: rgba(212, 175, 55, 0.4);
+  
+  /* Typography */
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-gold: #FEF08A;
+
+  /* Motion */
+  --ease-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 200ms;
+  --duration-normal: 400ms;
 }
 
-.navbar-brand {
-  font-size: 1.4rem;
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+  background-color: var(--bg-deep-space) !important;
+  background-image: 
+    radial-gradient(circle at 15% 0%, var(--maroon-glow) 0%, transparent 40%),
+    radial-gradient(circle at 85% 100%, rgba(5, 173, 177, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, var(--royal-glow) 0%, transparent 60%) !important;
+  background-attachment: fixed !important;
+  color: var(--text-primary) !important;
+  line-height: 1.6;
+  margin: 0;
+  padding-top: 80px;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
-.card {
-  border-radius: 15px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-deep-space); }
+::-webkit-scrollbar-thumb { background: var(--border-glass); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-muted); }
+
+/* ==========================================================
+   1. MOBILE DRAWER ISOLATION
+   ========================================================== */
+.drawer-overlay {
+  position: fixed !important; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.6) !important; backdrop-filter: blur(4px) !important;
+  z-index: 1045 !important; opacity: 0; pointer-events: none; 
+  transition: opacity var(--duration-normal) var(--ease-fluid);
+}
+.drawer-overlay.active { opacity: 1; pointer-events: auto; }
+
+.mobile-drawer {
+  position: fixed !important; top: 0; right: -100% !important; 
+  width: 300px; max-width: 80vw; height: 100vh;
+  background: var(--bg-deep-space) !important; 
+  z-index: 1050 !important;
+  border-left: 1px solid var(--border-glass) !important; 
+  box-shadow: -20px 0 50px rgba(0,0,0,0.5) !important;
+  display: flex !important; flex-direction: column; padding: 32px 24px;
+  transition: right var(--duration-normal) var(--ease-fluid) !important;
+}
+.mobile-drawer.active { right: 0 !important; }
+
+@media (min-width: 768px) {
+  .mobile-drawer, .drawer-overlay, #mobileMenuOpen {
+    display: none !important;
+  }
 }
 
-.btn {
-  border-radius: 8px;
+/* ==========================================================
+   2. ABSOLUTE TABLE NUKE (Fixes the White Table Bug)
+   ========================================================== */
+/* We must target Bootstrap 5's exact variable and child selectors */
+.table {
+  --bs-table-bg: transparent !important;
+  --bs-table-accent-bg: transparent !important;
+  --bs-table-striped-bg: transparent !important;
+  --bs-table-active-bg: transparent !important;
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.03) !important;
+  --bs-table-color: var(--text-primary) !important;
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-glass) !important;
+  margin-bottom: 0 !important;
 }
 
-.table th {
-  background-color: #f8f9fa;
-}
-.table-danger {
-  background-color: #fff5f5 !important;
-}
-#lowStockCount {
-  font-size: 0.9rem;
-}
-
-.nav-link.active {
-  background-color: rgba(255, 255, 255, 0.25);
-  border-radius: 5px;
-  font-weight: 600;
-}
-.navbar .nav-link.active {
-  color: #00c4ff !important;
-  font-weight: 600;
-  border-bottom: 2px solid #00c4ff;
-} */
-/* frontend/css/style.css
-   Modern, responsive, animated theme for Bill app
-   Replace your existing style.css with this file.
-*/
-
-/* ------------------------
-   Variables & base
-   ------------------------ */
-:root{
-  --bg-1: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
-  --accent: #4f46e5;        /* indigo-600 */
-  --accent-2: #06b6d4;      /* cyan-500 */
-  --muted: #6b7280;         /* gray-500 */
-  --text: #0f172a;          /* slate-900 */
-  --card-bg: rgba(255,255,255,0.8);
-  --glass-border: rgba(255,255,255,0.6);
-  --success: #10b981;
-  --danger: #ef4444;
-  --shadow-1: 0 6px 18px rgba(15,23,42,0.08);
-  --shadow-2: 0 10px 30px rgba(15,23,42,0.06);
-  --radius: 12px;
-  --glass-blur: 8px;
-  --transition: 240ms cubic-bezier(.2,.9,.3,1);
+/* Strip backgrounds from all table children */
+.table > :not(caption) > * > * {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: none !important; /* Removes Bootstrap's inset shadow */
+  padding: 16px 12px !important;
+  vertical-align: middle !important;
 }
 
-/* Typography */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
-html,body{height:100%}
-body{
-  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  background: var(--bg-1);
-  color: var(--text);
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
-  line-height:1.45;
-  padding-top: 68px; /* leave room for sticky navbar */
+/* Specific styling for Headers */
+.table th, .table > thead > tr > th {
+  color: var(--text-secondary) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  font-size: 0.75rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* ------------------------
-   Navbar
-   ------------------------ */
-.navbar {
-  backdrop-filter: blur(6px);
-  background: linear-gradient(90deg, rgba(79,70,229,0.12), rgba(6,182,212,0.06));
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  box-shadow: var(--shadow-1);
-  transition: background var(--transition), transform var(--transition);
-  padding: 0.6rem 1rem;
+/* Hover effect fix for Dark Mode */
+.table-hover > tbody > tr:hover > * {
+  --bs-table-accent-bg: rgba(255, 255, 255, 0.03) !important;
+  color: var(--text-primary) !important;
 }
 
-.navbar .navbar-brand {
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-.navbar .navbar-brand svg { height:20px; width:20px; }
-
-.navbar .nav-link {
-  color: rgba(255,255,255,0.92);
-  opacity: 0.95;
-  font-weight:500;
-  transition: color var(--transition), opacity var(--transition);
-}
-.navbar .nav-link:hover,
-.navbar .nav-link.active {
-  color: #fff;
-  opacity: 1;
-  transform: translateY(-1px);
+/* Danger row override for low stock */
+.table-danger > * {
+  background-color: rgba(239, 68, 68, 0.05) !important;
+  color: #fca5a5 !important;
 }
 
-/* auth area */
-#nav-auth { gap:8px; }
-#nav-username { font-weight:600; color: #fff; }
 
-/* prominent logout */
-#logoutBtn{
-  border-radius: 8px;
-  font-weight:600;
-  color: var(--accent);
-  background: #fff;
-  box-shadow: 0 4px 14px rgba(79,70,229,0.12);
-  transition: transform var(--transition), box-shadow var(--transition);
+/* ==========================================================
+   3. THE "VAULT" CARDS
+   ========================================================== */
+.saas-card, .card {
+  background: var(--surface-glass) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--border-glass) !important;
+  border-radius: 16px !important;
+  padding: 32px;
+  box-shadow: 0 24px 40px -12px rgba(0,0,0,0.5) !important;
+  transition: all var(--duration-normal) var(--ease-fluid);
+  position: relative; overflow: hidden;
+  color: var(--text-primary) !important;
 }
-#logoutBtn:hover{ transform: translateY(-2px); box-shadow: 0 10px 30px rgba(79,70,229,0.16); }
 
-/* ------------------------
-   Container / Cards
-   ------------------------ */
+.saas-card:hover {
+  background: var(--surface-glass-hover) !important;
+  border-color: var(--border-gold) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 30px 50px -12px rgba(0,0,0,0.7), inset 0 0 20px rgba(212, 175, 55, 0.05) !important;
+}
+
+/* ==========================================================
+   4. TYPOGRAPHY & UTILS
+   ========================================================== */
+h1, h2, h3, h4, h5, h6 { color: var(--text-primary); font-weight: 700; letter-spacing: -0.02em; }
+.text-gold { color: var(--gold-metallic) !important; }
+.text-emerald { color: var(--emerald-hwb) !important; }
+.text-muted-custom, .text-muted { color: var(--text-secondary) !important; }
+
+/* ==========================================================
+   5. PREMIUM INPUTS
+   ========================================================== */
+.saas-input-group { position: relative; margin-bottom: 24px; }
+.saas-label {
+  display: block; font-size: 0.85rem; font-weight: 600;
+  color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.saas-input, .form-control, .form-select {
+  width: 100%; padding: 14px 16px; font-size: 1rem; color: var(--text-primary) !important;
+  background: rgba(0, 0, 0, 0.4) !important; border: 1px solid var(--border-glass) !important;
+  border-radius: 8px; box-sizing: border-box;
+  transition: all var(--duration-fast) var(--ease-fluid);
+}
+.saas-input::placeholder, .form-control::placeholder { color: rgba(255,255,255,0.3) !important; }
+.saas-input:focus, .form-control:focus, .form-select:focus {
+  outline: none; background: rgba(0, 0, 0, 0.6) !important;
+  border-color: var(--gold-metallic) !important;
+  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15) !important;
+}
+select option, select.form-select option { background-color: var(--bg-deep-space) !important; color: var(--text-primary) !important; }
+
+/* ==========================================================
+   6. TACTILE LUXURY BUTTONS
+   ========================================================== */
+.saas-btn, .btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: inherit; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.02em;
+  padding: 12px 24px; border-radius: 8px; cursor: pointer;
+  border: none; gap: 8px; transition: all var(--duration-fast) var(--ease-fluid);
+  text-decoration: none; position: relative; overflow: hidden;
+}
+.saas-btn:active, .btn:active { transform: scale(0.97); }
+.saas-btn:disabled, .btn:disabled { opacity: 0.6; pointer-events: none; filter: grayscale(1); }
+
+.saas-btn-primary, .btn-primary {
+  background: linear-gradient(135deg, var(--gold-metallic), #B8860B) !important;
+  color: #000 !important; 
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3) !important;
+  border: none !important;
+}
+.saas-btn-primary:hover, .btn-primary:hover {
+  background: linear-gradient(135deg, var(--gold-light), var(--gold-metallic)) !important;
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.5) !important;
+}
+
+.saas-btn-secondary, .btn-secondary, .btn-outline-primary, .btn-outline-secondary, .btn-outline-danger {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-glass) !important;
+  backdrop-filter: blur(4px);
+}
+.saas-btn-secondary:hover, .btn-outline-primary:hover, .btn-outline-secondary:hover, .btn-outline-danger:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: var(--text-primary) !important;
+  color: #fff !important;
+}
+
+/* ==========================================================
+   7. EXECUTIVE NAVBAR
+   ========================================================== */
+.saas-navbar {
+  position: fixed; top: 0; left: 0; right: 0; height: 72px;
+  background: rgba(3, 7, 18, 0.7) !important;
+  backdrop-filter: saturate(200%) blur(24px) !important;
+  -webkit-backdrop-filter: saturate(200%) blur(24px) !important;
+  border-bottom: 1px solid var(--border-glass);
+  display: flex; align-items: center; z-index: 1040;
+}
+
+.saas-nav-link {
+  font-size: 0.85rem; font-weight: 600; color: var(--text-secondary) !important;
+  text-decoration: none; padding: 8px 16px; border-radius: 6px;
+  transition: all var(--duration-fast) var(--ease-fluid); text-transform: uppercase; letter-spacing: 0.05em;
+}
+.saas-nav-link:hover, .saas-nav-link.active {
+  color: var(--gold-metallic) !important;
+  background: rgba(212, 175, 55, 0.1) !important;
+}
+
+/* ==========================================================
+   8. ANIMATIONS & MISC
+   ========================================================== */
+.animate-enter { animation: vaultReveal 0.8s var(--ease-fluid) forwards; opacity: 0; transform: translateY(20px) scale(0.98); }
+@keyframes vaultReveal { to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.saas-spinner {
+  width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: var(--gold-metallic); border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .container { max-width: 1200px; }
-
-.card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(250,250,255,0.86));
-  border-radius: var(--radius);
-  border: 1px solid rgba(15,23,42,0.04);
-  box-shadow: var(--shadow-2);
-  padding: 1.25rem;
-  transition: transform var(--transition), box-shadow var(--transition);
-}
-.card:hover{
-  transform: translateY(-6px);
-  box-shadow: 0 18px 50px rgba(15,23,42,0.08);
-}
-
-/* small card header */
-.card h5 { margin-bottom:0.8rem; font-weight:700; color: #0b1220; }
-
-/* stats tile */
-.stat-tile {
-  border-radius: 14px;
-  padding: 1.15rem;
-  display:flex;
-  gap:8px;
-  align-items:center;
-  justify-content:space-between;
-}
-
-/* subtle badge */
-.badge {
-  background: rgba(79,70,229,0.12);
-  color: var(--accent);
-  font-weight:600;
-  border-radius: 10px;
-  padding: 0.35rem 0.6rem;
-}
-
-/* ------------------------
-   Forms & Inputs
-   ------------------------ */
-.form-control {
-  border-radius: 10px;
-  border: 1px solid rgba(15,23,42,0.06);
-  padding: 0.6rem 0.75rem;
-  transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
-  background: rgba(255,255,255,0.9);
-}
-.form-control:focus {
-  outline: none;
-  box-shadow: 0 6px 20px rgba(79,70,229,0.08);
-  border-color: rgba(79,70,229,0.4);
-  transform: translateY(-1px);
-}
-
-/* form labels */
-.form-label { font-weight:600; color: #1f2937; }
-
-/* small helper text */
-.form-text { color: var(--muted); font-size:0.9rem; }
-
-/* buttons */
-.btn-primary {
-  background: linear-gradient(90deg,var(--accent), var(--accent-2));
-  border: none;
-  box-shadow: 0 8px 24px rgba(79,70,229,0.12);
-  border-radius: 10px;
-  padding: 0.55rem 0.9rem;
-  font-weight:700;
-  transition: transform var(--transition), box-shadow var(--transition);
-}
-.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 18px 50px rgba(79,70,229,0.16); }
-
-/* outline style */
-.btn-outline-primary {
-  border-radius:10px;
-  border:1px solid rgba(79,70,229,0.12);
-  color:var(--accent);
-  font-weight:700;
-}
-
-/* small icon buttons */
-.btn-sm {
-  padding: 0.28rem 0.5rem;
-  border-radius:8px;
-}
-
-/* table */
-.table thead th {
-  border-bottom: 1px solid rgba(15,23,42,0.06);
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  color: #374151;
-}
-.table tbody tr {
-  transition: background var(--transition), transform var(--transition);
-}
-.table tbody tr:hover {
-  background: linear-gradient(90deg, rgba(79,70,229,0.03), rgba(6,182,212,0.02));
-  transform: translateY(-3px);
-}
-
-/* low stock highlight */
-.table-danger { background: linear-gradient(90deg, rgba(254,202,202,0.12), rgba(255,255,255,0.02)); }
-
-/* invoice table smaller fonts for compact listing */
-#invoiceTable th, #invoiceTable td { font-size: 0.95rem; padding: 0.6rem; }
-
-/* responsive helpers */
-@media (max-width: 900px){
-  body { padding-top:76px; }
-  .navbar { padding:0.5rem; }
-  .card { padding: 1rem; }
-  .container { padding-left: 1rem; padding-right: 1rem; }
-}
-
-/* ------------------------
-   Misc components
-   ------------------------ */
-.kpi { display:flex; flex-direction:column; gap:6px; }
-.kpi h3 { margin:0; font-weight:800; font-size:1.6rem; }
-.kpi p { margin:0; color:var(--muted); font-size:0.9rem; }
-
-/* QR container */
-#qrcode { display:inline-block; padding:8px; border-radius:10px; background: rgba(255,255,255,0.9); box-shadow: var(--shadow-1); }
-
-/* small utility classes */
-.text-muted { color: var(--muted) !important; }
-.center { display:flex; align-items:center; justify-content:center; }
-
-/* ------------------------
-   Animations: reveal on scroll & helpers
-   ------------------------ */
-.reveal {
-  opacity:0;
-  transform: translateY(12px) scale(0.995);
-  transition: transform 520ms cubic-bezier(.12,.86,.26,1), opacity 420ms ease-out;
-  will-change: transform, opacity;
-}
-.reveal.visible {
-  opacity:1;
-  transform: translateY(0) scale(1);
-}
-
-/* small hover lift */
-.hover-lift {
-  transition: transform 200ms cubic-bezier(.2,.9,.3,1), box-shadow 200ms;
-}
-.hover-lift:hover { transform: translateY(-6px); }
-
-/* subtle pulse for notifications */
-@keyframes pulse-soft {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.02); opacity: 0.92; }
-  100% { transform: scale(1); opacity: 1; }
-}
-.pulse { animation: pulse-soft 2000ms infinite; }
-
-/* reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .reveal { transition: none; transform:none; opacity:1; }
-  .hover-lift { transition: none; }
-  .pulse { animation: none; }
-}

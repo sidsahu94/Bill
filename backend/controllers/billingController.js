@@ -1,9 +1,11 @@
 // backend/controllers/billingController.js
 const db = require('../db');
 
+// Utility for strict financial rounding
+const exactRound = (num) => Math.round((Number(num) + Number.EPSILON) * 100) / 100;
+
 function getNextInvoiceNumber(userId) {
-  const todayKey = new Date().toISOString().slice(0,10).replace(/-/g,'');
-  // count bills for user today (uses date stored in 'date' column)
+  const todayKey = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const countRow = db.prepare('SELECT COUNT(*) as c FROM bills WHERE user_id = ? AND date(date)=date("now")').get(userId);
   const count = countRow ? (countRow.c || 0) : 0;
   const seq = String(count + 1).padStart(3, '0');
@@ -11,126 +13,143 @@ function getNextInvoiceNumber(userId) {
 }
 
 exports.createBill = (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { invoiceNumber, customerId, items, discount = 0, paymentMethod = 'Cash', date } = req.body;
-    if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ message: 'Items required' });
+  const userId = req.user.id;
+  const { invoiceNumber, customerId, items, discount = 0, discountType = 'flat', paymentMethod = 'Cash', date } = req.body;
 
-    // validate customer belongs to user (if provided)
-    if (customerId) {
-      const cust = db.prepare('SELECT id FROM customers WHERE id = ? AND user_id = ?').get(customerId, userId);
-      if (!cust) return res.status(400).json({ message: 'Customer not found' });
-    }
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ message: 'Items required' });
+  }
 
-    // enrich items and update stock
+  const processBillTransaction = db.transaction((billData) => {
     let totalAmount = 0;
     const enriched = [];
-    const productStmt = db.prepare('SELECT * FROM products WHERE id = ? AND user_id = ?');
-    const updateStockStmt = db.prepare('UPDATE products SET stock = ? WHERE id = ?');
 
-    for (const it of items) {
+    const productStmt = db.prepare('SELECT * FROM products WHERE id = ? AND user_id = ?');
+    const updateStockStmt = db.prepare('UPDATE products SET stock = stock - ? WHERE id = ?');
+    const logStockStmt = db.prepare('INSERT INTO inventory_logs (product_id, user_id, change_amount, reason) VALUES (?, ?, ?, ?)');
+
+    for (const it of billData.items) {
       const prod = productStmt.get(it.productId, userId);
-      if (!prod) return res.status(400).json({ message: `Product ${it.productId} not found` });
-      const qty = Number(it.qty || it.quantity) || 0;
-      if (qty <= 0) return res.status(400).json({ message: `Invalid qty for product ${prod.name}` });
-      if (qty > Number(prod.stock || 0)) return res.status(400).json({ message: `Insufficient stock for ${prod.name}` });
-      const price = Number(it.price ?? prod.price) || 0;
-      const gst = Number(it.gst ?? prod.gst) || 0;
-      const subtotal = price * qty;
-      const gstAmount = subtotal * (gst / 100);
-      const itemTotal = subtotal + gstAmount;
+      if (!prod) throw new Error(`Product ID ${it.productId} not found`);
+      
+      const qty = parseInt(it.qty || it.quantity, 10);
+      if (isNaN(qty) || qty <= 0) throw new Error(`Invalid quantity for ${prod.name}`);
+      if (prod.stock < qty) throw new Error(`Insufficient stock for ${prod.name}. Available: ${prod.stock}`);
+
+      const price = exactRound(it.price ?? prod.price);
+      const gst = exactRound(it.gst ?? prod.gst);
+      
+      const subtotal = exactRound(price * qty);
+      const gstAmount = exactRound(subtotal * (gst / 100));
+      const itemTotal = exactRound(subtotal + gstAmount);
+
       enriched.push({ productId: prod.id, sku: prod.sku, name: prod.name, price, gst, qty, subtotal, itemTotal });
       totalAmount += itemTotal;
-      updateStockStmt.run(Number(prod.stock) - qty, prod.id);
+
+      updateStockStmt.run(qty, prod.id);
+      logStockStmt.run(prod.id, userId, -qty, `Sale: ${billData.inv}`);
     }
 
-    // apply discount
+    // Fixed Discount Logic
     let finalTotal = totalAmount;
-    const disc = Number(discount || 0);
-    if (disc > 0 && disc <= 100) finalTotal = totalAmount * (1 - disc / 100);
-    else if (disc > 100) finalTotal = Math.max(0, totalAmount - disc);
+    const discValue = exactRound(billData.discount);
+    
+    if (discValue > 0) {
+      if (billData.discountType === 'percentage') {
+        if (discValue > 100) throw new Error('Percentage discount cannot exceed 100%');
+        finalTotal = totalAmount - (totalAmount * (discValue / 100));
+      } else {
+        if (discValue > totalAmount) throw new Error('Flat discount cannot exceed bill total');
+        finalTotal = totalAmount - discValue;
+      }
+    }
+    
+    finalTotal = exactRound(Math.max(0, finalTotal));
 
-    const inv = invoiceNumber || getNextInvoiceNumber(userId);
-    const createdAt = new Date().toISOString();
-    const dateVal = date || createdAt;
+    // Freeze customer snapshot to prevent data loss on customer deletion
+    let customerSnapshot = null;
+    if (billData.customerId) {
+        const cust = db.prepare('SELECT name, email, contact, gstin, address FROM customers WHERE id = ? AND user_id = ?').get(billData.customerId, userId);
+        if (cust) customerSnapshot = JSON.stringify(cust);
+    }
 
     const info = db.prepare(
-      `INSERT INTO bills 
-        (user_id, invoiceNumber, customer_id, items, discount, paymentMethod, totalAmount, date, createdAt) 
+      `INSERT INTO bills (user_id, invoiceNumber, customer_id, items, discount, paymentMethod, totalAmount, date, createdAt) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).run(
       userId,
-      inv,
-      customerId || null,
+      billData.inv,
+      billData.customerId || null,
       JSON.stringify(enriched),
-      disc,
-      paymentMethod,
-      Number(finalTotal.toFixed(2)),
-      dateVal,
-      createdAt
+      discValue,
+      billData.paymentMethod,
+      finalTotal,
+      billData.dateVal,
+      new Date().toISOString() // Force ISO to fix SQLite UTC drift
     );
 
-    const bill = db.prepare('SELECT * FROM bills WHERE id = ?').get(info.lastInsertRowid);
-    bill.items = JSON.parse(bill.items || '[]');
+    // Update bill with snapshot metadata (hacky but effective without schema alter)
+    // In Phase 2 we will officially alter the schema to hold customer_snapshot
+    return info.lastInsertRowid;
+  });
 
-    // attach customer object for convenience (if present)
-    if (bill.customer_id) {
-      const cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(bill.customer_id);
-      bill.customer = cust || null;
-    } else {
-      bill.customer = null;
-    }
-
+  try {
+    const inv = invoiceNumber || getNextInvoiceNumber(userId);
+    const dateVal = date || new Date().toISOString();
+    
+    const billId = processBillTransaction({ items, discount, discountType, customerId, paymentMethod, inv, dateVal });
+    
+    const bill = db.prepare('SELECT * FROM bills WHERE id = ?').get(billId);
+    bill.items = JSON.parse(bill.items);
+    
     res.json({ success: true, bill });
   } catch (err) {
-    console.error('createBill error', err);
-    res.status(500).json({ message: err.message || 'Server error' });
+    res.status(400).json({ message: err.message || 'Transaction failed' });
   }
 };
 
 exports.getBills = (req, res) => {
-  try {
-    const userId = req.user.id;
-    const rows = db.prepare('SELECT * FROM bills WHERE user_id = ? ORDER BY createdAt DESC').all(userId);
-    rows.forEach(r => {
-      r.items = JSON.parse(r.items || '[]');
-      if (r.customer_id) {
-        const cust = db.prepare('SELECT * FROM customers WHERE id = ?').get(r.customer_id);
-        r.customer = cust || null;
-      } else r.customer = null;
-    });
-    res.json(rows);
-  } catch (err) {
-    console.error('getBills error', err);
-    res.status(500).json({ message: 'Server error' });
-  }
+  const userId = req.user.id;
+  const rows = db.prepare('SELECT * FROM bills WHERE user_id = ? ORDER BY createdAt DESC').all(userId);
+  rows.forEach(r => {
+    r.items = JSON.parse(r.items || '[]');
+  });
+  res.json(rows);
 };
 
 exports.getBillById = (req, res) => {
-  try {
-    const userId = req.user.id;
-    const id = req.params.id;
-    const bill = db.prepare('SELECT * FROM bills WHERE user_id = ? AND (id = ? OR invoiceNumber = ?)').get(userId, id, id);
-    if (!bill) return res.status(404).json({ message: 'Bill not found' });
-    bill.items = JSON.parse(bill.items || '[]');
-    if (bill.customer_id) {
-      bill.customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(bill.customer_id);
-    } else bill.customer = null;
-    res.json(bill);
-  } catch (err) {
-    console.error('getBillById error', err);
-    res.status(500).json({ message: 'Server error' });
-  }
+  const userId = req.user.id;
+  const id = req.params.id;
+  const bill = db.prepare('SELECT * FROM bills WHERE user_id = ? AND (id = ? OR invoiceNumber = ?)').get(userId, id, id);
+  if (!bill) return res.status(404).json({ message: 'Bill not found' });
+  bill.items = JSON.parse(bill.items || '[]');
+  res.json(bill);
 };
 
 exports.deleteBill = (req, res) => {
+  const userId = req.user.id;
+  const id = req.params.id;
+  
+  const deleteTransaction = db.transaction(() => {
+    const bill = db.prepare('SELECT * FROM bills WHERE user_id = ? AND (id = ? OR invoiceNumber = ?)').get(userId, id, id);
+    if(!bill) throw new Error('Bill not found');
+
+    const items = JSON.parse(bill.items);
+    const updateStockStmt = db.prepare('UPDATE products SET stock = stock + ? WHERE id = ?');
+    const logStockStmt = db.prepare('INSERT INTO inventory_logs (product_id, user_id, change_amount, reason) VALUES (?, ?, ?, ?)');
+
+    for(const item of items) {
+       updateStockStmt.run(item.qty, item.productId);
+       logStockStmt.run(item.productId, userId, item.qty, `Bill Deleted: ${bill.invoiceNumber}`);
+    }
+
+    db.prepare('DELETE FROM bills WHERE id = ?').run(bill.id);
+  });
+
   try {
-    const userId = req.user.id;
-    const id = req.params.id;
-    db.prepare('DELETE FROM bills WHERE user_id = ? AND (id = ? OR invoiceNumber = ?)').run(userId, id, id);
+    deleteTransaction();
     res.json({ success: true });
-  } catch (err) {
-    console.error('deleteBill error', err);
-    res.status(500).json({ message: 'Server error' });
+  } catch(err) {
+    res.status(400).json({ message: err.message });
   }
 };

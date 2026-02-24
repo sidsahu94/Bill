@@ -1,35 +1,65 @@
-<!-- frontend/components/navbar.html -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top" role="navigation" aria-label="Main navigation">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="/index.html">💼 Bill</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon" aria-hidden="true"></span>
-      <span class="visually-hidden">Toggle navigation</span>
-    </button>
+<nav class="saas-navbar">
+  <div class="container w-100 d-flex justify-content-between align-items-center">
+    
+    <a href="/" class="text-decoration-none d-flex align-items-center gap-2">
+      <div style="width: 32px; height: 32px; background: var(--gold-metallic); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+      </div>
+      <span style="font-weight: 800; font-size: 1.2rem; letter-spacing: -0.02em; color: var(--text-primary);">BILL</span>
+    </a>
 
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto align-items-center">
-        <li class="nav-item"><a class="nav-link" href="/pages/dashboard.html">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="/pages/customers.html">Customers</a></li>
-        <li class="nav-item"><a class="nav-link" href="/pages/products.html">Products</a></li>
-        <li class="nav-item"><a class="nav-link" href="/pages/billing.html">Billing</a></li>
-        <li class="nav-item"><a class="nav-link" href="/pages/history.html">Bill History</a></li>
-        <li class="nav-item"><a class="nav-link" href="/pages/analytics.html">Analytics</a></li>
-        <li class="nav-item"><a class="nav-link" href="/pages/settings.html">Settings</a></li>
-
-        <!-- AUTH AREA: elements start hidden and are toggled by navbar.js -->
-        <li id="nav-auth" class="nav-item d-flex align-items-center">
-          <a id="loginLink" class="nav-link d-none" href="/pages/login.html">Login</a>
-          <a id="registerLink" class="nav-link d-none ms-2" href="/pages/register.html">Register</a>
-
-          <!-- show username when logged in -->
-          <span id="nav-username" class="navbar-text text-white me-2 d-none"></span>
-
-          <!-- large visible logout button -->
-          <button id="logoutBtn" class="btn btn-light btn-sm ms-1 d-none" type="button" aria-label="Logout">Logout</button>
-        </li>
-      </ul>
+    <div class="d-none d-md-flex align-items-center gap-2">
+      <a class="saas-nav-link" href="/pages/dashboard.html">Dashboard</a>
+      <a class="saas-nav-link" href="/pages/analytics.html">Analytics</a>
+      <a class="saas-nav-link" href="/pages/customers.html">Customers</a>
+      <a class="saas-nav-link" href="/pages/products.html">Products</a>
+      <a class="saas-nav-link" href="/pages/billing.html">Billing</a>
+      <a class="saas-nav-link" href="/pages/history.html">History</a>
     </div>
+
+    <div class="d-none d-md-flex align-items-center gap-3">
+      <a class="saas-nav-link px-2" href="/pages/settings.html" title="Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </a>
+      
+      <a id="navLoginBtn" href="/pages/login.html" class="saas-nav-link text-white">Log In</a>
+      <a id="navRegisterBtn" href="/pages/register.html" class="saas-btn saas-btn-primary">Register</a>
+      
+      <span id="navUsername" class="d-none fw-bold text-gold" style="font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase;"></span>
+      <button id="navLogoutBtn" class="saas-btn saas-btn-secondary d-none">Logout</button>
+    </div>
+
+    <button id="mobileMenuOpen" class="d-md-none" style="background:none; border:none; color: var(--text-primary);">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
   </div>
 </nav>
+
+<div id="drawerOverlay" class="drawer-overlay"></div>
+<aside id="mobileDrawer" class="mobile-drawer">
+  <div class="d-flex justify-content-between align-items-center mb-5">
+    <div class="d-flex align-items-center gap-2">
+      <div style="width: 24px; height: 24px; background: var(--gold-metallic); border-radius: 6px;"></div>
+      <span class="fw-bold">BILL</span>
+    </div>
+    <button id="mobileMenuClose" style="background:none; border:none; color: var(--text-secondary); font-size: 2rem; cursor: pointer;">&times;</button>
+  </div>
+  
+  <div class="d-flex flex-column gap-3 mb-auto">
+    <a class="saas-nav-link px-0" href="/pages/dashboard.html">Dashboard</a>
+    <a class="saas-nav-link px-0" href="/pages/analytics.html">Analytics</a>
+    <a class="saas-nav-link px-0" href="/pages/customers.html">Customers</a>
+    <a class="saas-nav-link px-0" href="/pages/products.html">Products</a>
+    <a class="saas-nav-link px-0" href="/pages/billing.html">Billing</a>
+    <a class="saas-nav-link px-0" href="/pages/history.html">History</a>
+    <a class="saas-nav-link px-0" href="/pages/settings.html">Settings</a>
+  </div>
+
+  <div class="d-flex flex-column gap-3 mt-4 pt-4" style="border-top: 1px solid var(--border-glass);">
+    <a id="mobLoginBtn" href="/pages/login.html" class="saas-btn saas-btn-secondary w-100">Log In</a>
+    <a id="mobRegisterBtn" href="/pages/register.html" class="saas-btn saas-btn-primary w-100">Register</a>
+    
+    <span id="mobUsername" class="d-none fw-bold text-center text-gold"></span>
+    <button id="mobLogoutBtn" class="saas-btn saas-btn-secondary w-100 d-none">Logout</button>
+  </div>
+</aside>

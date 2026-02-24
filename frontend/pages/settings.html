@@ -2,81 +2,177 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Settings - Bill</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>Configuration - Bill Executive</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* Premium Settings Tab Navigation */
+    .settings-nav .nav-link {
+      color: var(--text-secondary);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      transition: all var(--duration-fast) var(--ease-fluid);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.85rem;
+      border: 1px solid transparent;
+    }
+    .settings-nav .nav-link:hover {
+      background-color: rgba(255, 255, 255, 0.03);
+      color: var(--text-primary);
+    }
+    .settings-nav .nav-link.active {
+      background-color: rgba(212, 175, 55, 0.1);
+      color: var(--gold-metallic);
+      border-color: var(--border-gold);
+      box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.05);
+    }
+    
+    /* Settings Content Area */
+    .tab-content-vault {
+      background: rgba(15, 23, 42, 0.2);
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      padding: 32px;
+      backdrop-filter: blur(12px);
+    }
+  </style>
 </head>
 <body>
   <div id="navbar-placeholder"></div>
 
+  <main class="container py-4 mb-5 animate-enter" id="main">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-5 gap-3">
+      <div>
+        <h2 class="fw-bold m-0" style="color: var(--gold-metallic);">System Configuration</h2>
+        <p class="text-muted-custom m-0 mt-1">Manage security, identity, and data continuity.</p>
+      </div>
+    </div>
 
-
-  <div class="container py-4">
-    <h2>⚙ Settings</h2>
-
-    <div class="row g-3 mb-3">
-      <div class="col-md-6">
-        <div class="card p-3">
-          <h5>Business Info</h5>
-          <form id="settingsForm" enctype="multipart/form-data">
-            <div class="mb-2">
-              <label class="form-label">Business Name</label>
-              <input id="businessName" class="form-control">
-            </div>
-            <div class="mb-2">
-              <label class="form-label">GSTIN</label>
-              <input id="gstin" class="form-control">
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Address</label>
-              <textarea id="address" class="form-control"></textarea>
-            </div>
-            <div class="mb-2">
-              <label class="form-label">Logo</label>
-              <input type="file" id="logo" class="form-control" accept="image/*">
-            </div>
-            <button class="btn btn-primary" type="submit">Save Settings</button>
-          </form>
+    <div class="row g-5">
+      <div class="col-12 col-lg-3">
+        <div class="nav flex-column nav-pills settings-nav" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+          <button class="nav-link text-start active d-flex align-items-center gap-3" data-bs-toggle="pill" data-bs-target="#profile-tab" type="button" role="tab">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            Executive Identity
+          </button>
+          <button class="nav-link text-start d-flex align-items-center gap-3" data-bs-toggle="pill" data-bs-target="#security-tab" type="button" role="tab">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            Security & Access
+          </button>
+          <button class="nav-link text-start d-flex align-items-center gap-3" data-bs-toggle="pill" data-bs-target="#business-tab" type="button" role="tab">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            Corporate Entity
+          </button>
+          <button class="nav-link text-start d-flex align-items-center gap-3" data-bs-toggle="pill" data-bs-target="#data-tab" type="button" role="tab">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+            Data Continuity
+          </button>
         </div>
       </div>
 
-      <div class="col-md-6">
-        <div class="card p-3">
-          <h5>Theme & Database</h5>
-          <div class="mb-3">
-            <label class="form-label">Theme</label>
-            <select id="themeSelect" class="form-select">
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
+      <div class="col-12 col-lg-9">
+        <div class="tab-content tab-content-vault" id="v-pills-tabContent">
+          
+          <div class="tab-pane fade show active" id="profile-tab" role="tabpanel">
+            <h5 class="fw-bold mb-4 text-white">Identity Details</h5>
+            <form id="profileForm">
+              <div class="row g-4">
+                <div class="col-md-6 saas-input-group m-0">
+                  <label class="saas-label">Executive Name</label>
+                  <input type="text" id="profileName" class="saas-input" required>
+                </div>
+                <div class="col-md-6 saas-input-group m-0">
+                  <label class="saas-label">Primary Email</label>
+                  <input type="email" id="profileEmail" class="saas-input" disabled readonly style="background: rgba(0,0,0,0.4); color: var(--text-secondary);">
+                  <div class="form-text mt-2" style="color: var(--text-secondary); font-size: 0.8rem;">Identifier is locked post-verification.</div>
+                </div>
+                <div class="col-12 mt-5">
+                  <button type="submit" class="saas-btn saas-btn-primary px-5" id="saveProfileBtn">Update Identity</button>
+                </div>
+              </div>
+            </form>
           </div>
 
-          <div class="mb-2">
-            <label>Export Database (JSON)</label>
-            <button class="btn btn-outline-success w-100" id="exportDbBtn">Download Backup</button>
-          </div>
-          <div class="mb-2">
-            <label>Import Database (JSON)</label>
-            <input type="file" id="importDb" class="form-control" accept=".json">
+          <div class="tab-pane fade" id="security-tab" role="tabpanel">
+            <h5 class="fw-bold mb-4 text-white">Cryptographic Keys</h5>
+            <form id="securityForm">
+              <div class="row g-4">
+                <div class="col-md-12 saas-input-group m-0">
+                  <label class="saas-label">Current Key (Password)</label>
+                  <input type="password" id="currentPassword" class="saas-input" required>
+                </div>
+                <div class="col-md-6 saas-input-group m-0">
+                  <label class="saas-label">New Key</label>
+                  <input type="password" id="newPassword" class="saas-input" minlength="8" required>
+                </div>
+                <div class="col-md-6 saas-input-group m-0">
+                  <label class="saas-label">Confirm New Key</label>
+                  <input type="password" id="confirmPassword" class="saas-input" minlength="8" required>
+                </div>
+                <div class="col-12 mt-5">
+                  <button type="submit" class="saas-btn px-5" id="updatePasswordBtn" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5;">Rotate Security Key</button>
+                </div>
+              </div>
+            </form>
           </div>
 
-          <div class="mb-2">
-            <label>Multi-User Access</label>
-            <input type="checkbox" id="multiUserToggle">
+          <div class="tab-pane fade" id="business-tab" role="tabpanel">
+            <h5 class="fw-bold mb-4 text-white">Corporate Parameters</h5>
+            <form id="settingsForm" enctype="multipart/form-data">
+              <div class="row g-4">
+                <div class="col-md-6 saas-input-group m-0">
+                  <label class="saas-label">Registered Name</label>
+                  <input id="businessName" class="saas-input">
+                </div>
+                <div class="col-md-6 saas-input-group m-0">
+                  <label class="saas-label">Tax ID (GSTIN)</label>
+                  <input id="gstin" class="saas-input">
+                </div>
+                <div class="col-12 saas-input-group m-0">
+                  <label class="saas-label">Headquarters Address</label>
+                  <textarea id="address" class="saas-input" rows="3" style="resize: none;"></textarea>
+                </div>
+                <div class="col-12 mt-5">
+                  <button type="submit" class="saas-btn saas-btn-primary px-5">Commit Corporate Parameters</button>
+                </div>
+              </div>
+            </form>
           </div>
+
+          <div class="tab-pane fade" id="data-tab" role="tabpanel">
+            <h5 class="fw-bold mb-4 text-white">Data Continuity</h5>
+            <div class="row g-4">
+              <div class="col-md-6">
+                <div class="saas-card h-100" style="padding: 24px;">
+                  <h6 class="fw-bold text-gold mb-2">Export Snapshot</h6>
+                  <p class="small text-muted-custom mb-4">Generate an encrypted JSON backup of all ledgers, directories, and assets.</p>
+                  <button class="saas-btn saas-btn-secondary w-100" id="exportDbBtn">Download Snapshot</button>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="saas-card h-100" style="padding: 24px;">
+                  <h6 class="fw-bold text-gold mb-2">Restore Snapshot</h6>
+                  <p class="small text-muted-custom mb-4">Overwrite current database with a previously generated JSON backup.</p>
+                  <div class="position-relative">
+                    <input type="file" id="importDb" class="position-absolute w-100 h-100" accept=".json" style="opacity: 0; cursor: pointer; z-index: 2;">
+                    <button class="saas-btn saas-btn-secondary w-100">Select File & Restore</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  
-
-
-<script src="/js/navbar.js"></script>
+  <script src="/js/navbar.js"></script>
   <script src="/js/settings.js"></script>
-
 </body>
 </html>

@@ -1,129 +1,126 @@
 // frontend/js/navbar.js
-// Loads navbar HTML, updates auth UI and reacts to storage changes so the Logout button
-// appears/disappears reliably (even across tabs).
 
 (async function () {
   async function loadNavbar() {
     try {
       const placeholder = document.getElementById('navbar-placeholder');
-      if (!placeholder) {
-        console.warn('navbar-placeholder not found in DOM');
-        return;
-      }
+      if (!placeholder) return;
 
-      // cache-bust to ensure latest markup in browser
       const res = await fetch('/components/navbar.html?v=' + Date.now(), { cache: 'no-store' });
-      if (!res.ok) throw new Error('Failed to fetch navbar component: ' + res.status);
+      if (!res.ok) throw new Error('Failed to fetch navbar');
       placeholder.innerHTML = await res.text();
 
-      attachAuthHandlers(); // after HTML is injected
+      initMobileDrawer();
+      attachAuthHandlers();
       markActiveLink();
     } catch (err) {
       console.error('Failed to load navbar:', err);
-      // minimal fallback so UI is not broken
-      const placeholder = document.getElementById('navbar-placeholder');
-      if (placeholder) {
-        placeholder.innerHTML = `<nav class="navbar navbar-dark bg-primary"><div class="container"><a class="navbar-brand" href="/">💼 Bill</a></div></nav>`;
-      }
     }
+  }
+
+  function initMobileDrawer() {
+    const openBtn = document.getElementById('mobileMenuOpen');
+    const closeBtn = document.getElementById('mobileMenuClose');
+    const drawer = document.getElementById('mobileDrawer');
+    const overlay = document.getElementById('drawerOverlay');
+
+    if(!openBtn || !drawer) return;
+
+    const openDrawer = () => {
+      drawer.classList.add('active');
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    };
+
+    const closeDrawer = () => {
+      drawer.classList.remove('active');
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    };
+
+    openBtn.addEventListener('click', openDrawer);
+    closeBtn.addEventListener('click', closeDrawer);
+    overlay.addEventListener('click', closeDrawer);
   }
 
   function markActiveLink() {
-    try {
-      const currentPath = window.location.pathname || '/';
-      const currentFile = currentPath.split('/').pop() || 'index.html';
-      document.querySelectorAll('.nav-link').forEach(link => {
-        const href = link.getAttribute('href') || '';
-        const linkFile = href.split('/').pop() || href;
-        if (linkFile === currentFile || href === currentPath) {
-          link.classList.add('active');
-          link.setAttribute('aria-current', 'page');
-        } else {
-          link.classList.remove('active');
-          link.removeAttribute('aria-current');
-        }
-      });
-    } catch (e) {
-      // ignore
-    }
+    const currentPath = window.location.pathname || '/';
+    document.querySelectorAll('.saas-nav-link').forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && href !== '/' && currentPath.includes(href)) {
+        link.classList.add('active');
+      }
+    });
   }
 
   function attachAuthHandlers() {
-    const loginLink = document.getElementById('loginLink');
-    const registerLink = document.getElementById('registerLink');
-    const navUsername = document.getElementById('nav-username');
-    const logoutBtn = document.getElementById('logoutBtn');
+    // Desktop Elements
+    const loginBtn = document.getElementById('navLoginBtn');
+    const registerBtn = document.getElementById('navRegisterBtn');
+    const usernameSpan = document.getElementById('navUsername');
+    const logoutBtn = document.getElementById('navLogoutBtn');
 
-    // safe guards
-    if (!loginLink || !registerLink || !navUsername || !logoutBtn) {
-      // If markup differs, we still want to avoid throwing errors
-      return;
-    }
+    // Mobile Elements
+    const mobLoginBtn = document.getElementById('mobLoginBtn');
+    const mobRegisterBtn = document.getElementById('mobRegisterBtn');
+    const mobUsernameSpan = document.getElementById('mobUsername');
+    const mobLogoutBtn = document.getElementById('mobLogoutBtn');
 
     function updateAuthUI() {
       const token = localStorage.getItem('token');
       const userName = localStorage.getItem('userName');
 
       if (token) {
-        loginLink.classList.add('d-none');
-        registerLink.classList.add('d-none');
-
-        navUsername.textContent = userName || 'Account';
-        navUsername.classList.remove('d-none');
-
-        logoutBtn.classList.remove('d-none');
+        // Hide auth actions
+        if(loginBtn) loginBtn.classList.add('d-none');
+        if(registerBtn) registerBtn.classList.add('d-none');
+        if(mobLoginBtn) mobLoginBtn.classList.add('d-none');
+        if(mobRegisterBtn) mobRegisterBtn.classList.add('d-none');
+        
+        // Show user details
+        if(usernameSpan) { usernameSpan.textContent = userName; usernameSpan.classList.remove('d-none'); }
+        if(logoutBtn) logoutBtn.classList.remove('d-none');
+        if(mobUsernameSpan) { mobUsernameSpan.textContent = userName; mobUsernameSpan.classList.remove('d-none'); }
+        if(mobLogoutBtn) mobLogoutBtn.classList.remove('d-none');
       } else {
-        loginLink.classList.remove('d-none');
-        registerLink.classList.remove('d-none');
-
-        navUsername.classList.add('d-none');
-        logoutBtn.classList.add('d-none');
+        // Reset to logged out state
+        if(loginBtn) loginBtn.classList.remove('d-none');
+        if(registerBtn) registerBtn.classList.remove('d-none');
+        if(mobLoginBtn) mobLoginBtn.classList.remove('d-none');
+        if(mobRegisterBtn) mobRegisterBtn.classList.remove('d-none');
+        
+        if(usernameSpan) usernameSpan.classList.add('d-none');
+        if(logoutBtn) logoutBtn.classList.add('d-none');
+        if(mobUsernameSpan) mobUsernameSpan.classList.add('d-none');
+        if(mobLogoutBtn) mobLogoutBtn.classList.add('d-none');
       }
     }
 
-    // initial render
-    updateAuthUI();
-
-    // attach logout handler (idempotent)
-    logoutBtn.onclick = (e) => {
+    const handleLogout = (e) => {
       e.preventDefault();
-      // clear auth info
       localStorage.removeItem('token');
       localStorage.removeItem('userName');
-      // optionally clear other auth-related keys
-      // redirect to login (replace so back doesn't go to protected page)
+      updateAuthUI();
       window.location.replace('/pages/login.html');
     };
 
-    // expose for other scripts to call directly (optional)
+    if(logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+    if(mobLogoutBtn) mobLogoutBtn.addEventListener('click', handleLogout);
+
+    updateAuthUI();
     window.updateNavbarAuth = updateAuthUI;
   }
 
-  // respond to storage events from other tabs/windows
+  // Cross-tab sync
   window.addEventListener('storage', (ev) => {
-    if (!ev) return;
-    // if token or userName changed in another tab, update auth UI in this tab
     if (ev.key === 'token' || ev.key === 'userName') {
-      // small delay to ensure DOM exists if this tab is just opening
-      setTimeout(() => {
-        if (window.updateNavbarAuth) window.updateNavbarAuth();
-      }, 50);
+      setTimeout(() => { if (window.updateNavbarAuth) window.updateNavbarAuth(); }, 50);
     }
   });
 
-  // Also respond to a custom event (other code can dispatch this after login/logout)
   window.addEventListener('authChanged', () => {
     if (window.updateNavbarAuth) window.updateNavbarAuth();
   });
 
-  // Initial load
-  document.addEventListener('DOMContentLoaded', () => {
-    loadNavbar();
-  });
-
-  // If the script is injected after DOMContentLoaded, still attempt load
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    // small timeout to allow placeholder to exist
-    setTimeout(loadNavbar, 10);
-  }
+  document.addEventListener('DOMContentLoaded', loadNavbar);
 })();
