@@ -4,30 +4,57 @@ const router = express.Router();
 const db = require('../db');
 const auth = require('../middlewares/auth');
 
-router.get('/', auth, (req, res) => {
-  const rows = db.prepare('SELECT * FROM customers WHERE user_id = ? ORDER BY id DESC').all(req.user.id);
-  res.json(rows);
+router.get('/', auth, async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM customers WHERE user_id = $1 ORDER BY id DESC', [req.user.id]);
+    res.json(rows);
+  } catch (err) {
+    console.error('[CUSTOMERS] GET error:', err);
+    res.status(500).json({ error: 'SERVER_ERROR', message: 'Failed to fetch customers' });
+  }
 });
 
-router.post('/', auth, (req, res) => {
-  const { name, email, contact, address, gstin } = req.body;
-  const info = db.prepare('INSERT INTO customers (user_id, name, email, contact, address, gstin) VALUES (?, ?, ?, ?, ?, ?)').run(req.user.id, name, email, contact, address, gstin);
-  const created = db.prepare('SELECT * FROM customers WHERE id = ?').get(info.lastInsertRowid);
-  res.json({ success: true, customer: created });
+router.post('/', auth, async (req, res) => {
+  try {
+    const { name, email, contact, address, gstin } = req.body;
+    if (!name) return res.status(400).json({ error: 'VALIDATION', message: 'Name is required' });
+
+    await db.query(
+      `INSERT INTO customers (user_id, name, email, contact, address, gstin) 
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [req.user.id, name, email || '', contact || '', address || '', gstin || '']
+    );
+    res.status(201).json({ success: true, message: 'Customer created' });
+  } catch (err) {
+    console.error('[CUSTOMERS] POST error:', err);
+    res.status(500).json({ error: 'SERVER_ERROR', message: 'Failed to create customer' });
+  }
 });
 
-router.put('/:id', auth, (req, res) => {
-  const id = req.params.id;
-  const row = db.prepare('SELECT * FROM customers WHERE id = ? AND user_id = ?').get(id, req.user.id);
-  if (!row) return res.status(404).json({ message: 'Not found' });
-  const { name, email, contact, address, gstin } = req.body;
-  db.prepare('UPDATE customers SET name=?, email=?, contact=?, address=?, gstin=? WHERE id = ?').run(name, email, contact, address, gstin, id);
-  res.json({ success: true });
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const { name, email, contact, address, gstin } = req.body;
+    await db.query(
+      `UPDATE customers 
+       SET name = $1, email = $2, contact = $3, address = $4, gstin = $5 
+       WHERE id = $6 AND user_id = $7`,
+      [name, email, contact, address, gstin, req.params.id, req.user.id]
+    );
+    res.json({ success: true, message: 'Customer updated' });
+  } catch (err) {
+    console.error('[CUSTOMERS] PUT error:', err);
+    res.status(500).json({ error: 'SERVER_ERROR', message: 'Failed to update customer' });
+  }
 });
 
-router.delete('/:id', auth, (req, res) => {
-  db.prepare('DELETE FROM customers WHERE id = ? AND user_id = ?').run(req.params.id, req.user.id);
-  res.json({ success: true });
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    await db.query('DELETE FROM customers WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+    res.json({ success: true, message: 'Customer deleted' });
+  } catch (err) {
+    console.error('[CUSTOMERS] DELETE error:', err);
+    res.status(500).json({ error: 'SERVER_ERROR', message: 'Failed to delete customer' });
+  }
 });
 
 module.exports = router;

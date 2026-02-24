@@ -2,42 +2,46 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
+const PORT = process.env.PORT || 5000;
 
+// ==========================================
+// CRITICAL FIX: TRUST PROXY FOR RENDER
+// This tells express-rate-limit that it is 
+// running safely behind Render's load balancer.
+// ==========================================
+app.set('trust proxy', 1);
+
+// Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// ensure data dir exists
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+// Static File Serving (Frontend)
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 // Routes
-app.use('/api/auth', require('./backend/routes/auth'));
-app.use('/api/products', require('./backend/routes/products'));
-app.use('/api/customers', require('./backend/routes/customers'));
-app.use('/api/billing', require('./backend/routes/billing'));
-app.use('/api/analytics', require('./backend/routes/analytics'));
-app.use('/api/settings', require('./backend/routes/settings')); // <- ensure settings route
+const authRoutes = require('./backend/routes/auth');
+const productRoutes = require('./backend/routes/products');
+const customerRoutes = require('./backend/routes/customers');
+const billingRoutes = require('./backend/routes/billing');
+const analyticsRoutes = require('./backend/routes/analytics');
+const settingsRoutes = require('./backend/routes/settings');
 
-// serve frontend static from frontend/
-const frontendPath = path.join(__dirname, 'frontend');
-app.use(express.static(frontendPath));
-app.use('/components', express.static(path.join(frontendPath, 'components')));
-app.use('/js', express.static(path.join(frontendPath, 'js')));
-app.use('/css', express.static(path.join(frontendPath, 'css')));
-app.use('/pages', express.static(path.join(frontendPath, 'pages')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // serve uploaded logos
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/customers', customerRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/settings', settingsRoutes);
 
-// SPA / static html fallback: serve matching file if exists or index
-app.get(/^\/(?!api).*/, (req, res) => {
-  const requested = path.join(frontendPath, req.path);
-  if (requested.endsWith('.html') && fs.existsSync(requested)) return res.sendFile(requested);
-  return res.sendFile(path.join(frontendPath, 'index.html'));
+// SPA Fallback for Frontend Routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+// Initialize Server
+app.listen(PORT, () => {
+  console.log(`[CORE] Enterprise Engine active on port ${PORT}`);
+});

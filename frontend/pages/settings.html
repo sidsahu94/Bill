@@ -4,41 +4,24 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   <title>Configuration - Bill Executive</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico"><link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#030712">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
   <style>
-    /* Premium Settings Tab Navigation */
     .settings-nav .nav-link {
-      color: var(--text-secondary);
-      border-radius: 8px;
-      padding: 12px 16px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      transition: all var(--duration-fast) var(--ease-fluid);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      font-size: 0.85rem;
-      border: 1px solid transparent;
+      color: var(--text-secondary); border-radius: 8px; padding: 12px 16px; font-weight: 600;
+      margin-bottom: 8px; transition: all var(--duration-fast) var(--ease-fluid);
+      text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.85rem; border: 1px solid transparent;
     }
-    .settings-nav .nav-link:hover {
-      background-color: rgba(255, 255, 255, 0.03);
-      color: var(--text-primary);
-    }
+    .settings-nav .nav-link:hover { background-color: rgba(255, 255, 255, 0.03); color: var(--text-primary); }
     .settings-nav .nav-link.active {
-      background-color: rgba(212, 175, 55, 0.1);
-      color: var(--gold-metallic);
-      border-color: var(--border-gold);
-      box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.05);
+      background-color: rgba(212, 175, 55, 0.1); color: var(--gold-metallic);
+      border-color: var(--border-gold); box-shadow: inset 0 0 15px rgba(212, 175, 55, 0.05);
     }
-    
-    /* Settings Content Area */
-    .tab-content-vault {
-      background: rgba(15, 23, 42, 0.2);
-      border: 1px solid var(--border-glass);
-      border-radius: 16px;
-      padding: 32px;
-      backdrop-filter: blur(12px);
-    }
+    .tab-content-vault { background: rgba(15, 23, 42, 0.2); border: 1px solid var(--border-glass); border-radius: 16px; padding: 32px; backdrop-filter: blur(12px); }
   </style>
 </head>
 <body>
@@ -100,18 +83,21 @@
           <div class="tab-pane fade" id="security-tab" role="tabpanel">
             <h5 class="fw-bold mb-4 text-white">Cryptographic Keys</h5>
             <form id="securityForm">
+              
+              <input type="text" id="hiddenUsername" autocomplete="username" style="display: none;" aria-hidden="true">
+
               <div class="row g-4">
                 <div class="col-md-12 saas-input-group m-0">
                   <label class="saas-label">Current Key (Password)</label>
-                  <input type="password" id="currentPassword" class="saas-input" required>
+                  <input type="password" id="currentPassword" class="saas-input" autocomplete="current-password" required>
                 </div>
                 <div class="col-md-6 saas-input-group m-0">
                   <label class="saas-label">New Key</label>
-                  <input type="password" id="newPassword" class="saas-input" minlength="8" required>
+                  <input type="password" id="newPassword" class="saas-input" minlength="8" autocomplete="new-password" required>
                 </div>
                 <div class="col-md-6 saas-input-group m-0">
                   <label class="saas-label">Confirm New Key</label>
-                  <input type="password" id="confirmPassword" class="saas-input" minlength="8" required>
+                  <input type="password" id="confirmPassword" class="saas-input" minlength="8" autocomplete="new-password" required>
                 </div>
                 <div class="col-12 mt-5">
                   <button type="submit" class="saas-btn px-5" id="updatePasswordBtn" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5;">Rotate Security Key</button>

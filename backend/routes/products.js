@@ -4,35 +4,61 @@ const router = express.Router();
 const db = require('../db');
 const auth = require('../middlewares/auth');
 
-// GET products for logged-in user
-router.get('/', auth, (req, res) => {
-  const rows = db.prepare('SELECT * FROM products WHERE user_id = ? ORDER BY id DESC').all(req.user.id);
-  res.json(rows);
+// Get all products for user
+router.get('/', auth, async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT * FROM products WHERE user_id = $1 ORDER BY id DESC', [req.user.id]);
+    res.json(rows);
+  } catch (err) {
+    console.error('[PRODUCTS] GET error:', err);
+    res.status(500).json({ error: 'SERVER_ERROR', message: 'Failed to fetch products' });
+  }
 });
 
-// POST add product
-router.post('/', auth, (req, res) => {
-  const { name, sku, price = 0, stock = 0, gst = 0, lowStockThreshold = 10 } = req.body;
-  const info = db.prepare('INSERT INTO products (user_id, sku, name, price, stock, gst, lowStockThreshold) VALUES (?, ?, ?, ?, ?, ?, ?)').run(req.user.id, sku, name, price, stock, gst, lowStockThreshold);
-  const created = db.prepare('SELECT * FROM products WHERE id = ?').get(info.lastInsertRowid);
-  res.json({ success: true, product: created });
+// Create product
+router.post('/', auth, async (req, res) => {
+  try {
+    const { name, sku, price, stock, gst, lowStockThreshold } = req.body;
+    if (!name || !sku) return res.status(400).json({ error: 'VALIDATION', message: 'Name and SKU required' });
+
+    await db.query(
+      `INSERT INTO products (user_id, name, sku, price, stock, gst, lowStockThreshold) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [req.user.id, name, sku, price || 0, stock || 0, gst || 0, lowStockThreshold || 10]
+    );
+    res.status(201).json({ success: true, message: 'Product created' });
+  } catch (err) {
+    console.error('[PRODUCTS] POST error:', err);
+    res.status(500).json({ error: 'SERVER_ERROR', message: 'Failed to create product' });
+  }
 });
 
-// PUT update product
-router.put('/:id', auth, (req, res) => {
-  const id = req.params.id;
-  const p = db.prepare('SELECT * FROM products WHERE id = ? AND user_id = ?').get(id, req.user.id);
-  if (!p) return res.status(404).json({ message: 'Not found' });
-  const { name, sku, price = 0, stock = 0, gst = 0, lowStockThreshold = 10 } = req.body;
-  db.prepare('UPDATE products SET sku=?, name=?, price=?, stock=?, gst=?, lowStockThreshold=? WHERE id = ?').run(sku, name, price, stock, gst, lowStockThreshold, id);
-  res.json({ success: true });
+// Update product
+router.put('/:id', auth, async (req, res) => {
+  try {
+    const { name, sku, price, stock, gst, lowStockThreshold } = req.body;
+    await db.query(
+      `UPDATE products 
+       SET name = $1, sku = $2, price = $3, stock = $4, gst = $5, lowStockThreshold = $6 
+       WHERE id = $7 AND user_id = $8`,
+      [name, sku, price, stock, gst, lowStockThreshold, req.params.id, req.user.id]
+    );
+    res.json({ success: true, message: 'Product updated' });
+  } catch (err) {
+    console.error('[PRODUCTS] PUT error:', err);
+    res.status(500).json({ error: 'SERVER_ERROR', message: 'Failed to update product' });
+  }
 });
 
-// DELETE
-router.delete('/:id', auth, (req, res) => {
-  const id = req.params.id;
-  db.prepare('DELETE FROM products WHERE id = ? AND user_id = ?').run(id, req.user.id);
-  res.json({ success: true });
+// Delete product
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    await db.query('DELETE FROM products WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id]);
+    res.json({ success: true, message: 'Product deleted' });
+  } catch (err) {
+    console.error('[PRODUCTS] DELETE error:', err);
+    res.status(500).json({ error: 'SERVER_ERROR', message: 'Failed to delete product' });
+  }
 });
 
 module.exports = router;

@@ -137,13 +137,15 @@ async function handlePasswordChange(e) {
 // --- Corporate Entity Settings ---
 async function loadBusinessSettings() {
   try {
-    const res = await fetch('/api/settings');
+    // FIX: Added headers to authorize the GET request
+    const res = await fetch('/api/settings', { headers: makeHeaders(false) });
+    if (!res.ok) throw new Error('Failed to load settings');
     const data = await res.json();
     document.getElementById('businessName').value = data.name || '';
     document.getElementById('gstin').value = data.gstin || '';
     document.getElementById('address').value = data.address || '';
   } catch (err) {
-    console.warn('No corporate settings found yet.');
+    console.warn('No corporate settings found yet or authorization failed.');
   }
 }
 
@@ -160,7 +162,13 @@ async function saveBusinessSettings(e) {
   btn.innerHTML = `<div class="saas-spinner" style="border-top-color: #000; width: 14px; height: 14px;"></div> <span class="ms-2">Committing...</span>`;
 
   try {
-    const res = await fetch('/api/settings', { method: 'POST', body: formData });
+    // FIX: Added headers to authorize the POST request
+    const res = await fetch('/api/settings', { 
+      method: 'POST', 
+      headers: makeHeaders(false), // Pass false so fetch automatically sets the multipart boundary for FormData
+      body: formData 
+    });
+    
     if(res.ok) showToast('Corporate parameters committed to registry.', 'success');
     else throw new Error('Transaction failed');
   } catch(err) {
@@ -175,7 +183,8 @@ async function saveBusinessSettings(e) {
 // --- Data Continuity (Backup & Restore) ---
 async function exportDatabase() {
   try {
-    const res = await fetch('/api/settings/export');
+    const res = await fetch('/api/settings/export', { headers: makeHeaders(false) });
+    if(!res.ok) throw new Error('Export failed');
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); 
@@ -203,7 +212,7 @@ function importDatabase(e) {
       const json = JSON.parse(ev.target.result);
       const res = await fetch('/api/settings/import', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: makeHeaders(true),
         body: JSON.stringify(json)
       });
       if(res.ok) {

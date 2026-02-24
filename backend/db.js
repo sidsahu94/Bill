@@ -1,79 +1,85 @@
 // backend/db.js
-const path = require('path');
-const Database = require('better-sqlite3');
+const { Pool } = require('pg');
+require('dotenv').config();
 
-const dbPath = path.resolve(__dirname, '..', 'bill.db');
-const db = new Database(dbPath);
+// Strip the conflicting "?sslmode=require" from the Neon URL 
+// because the 'pg' library handles SSL via the config object below.
+let safeConnectionString = process.env.DATABASE_URL || '';
+if (safeConnectionString.includes('?')) {
+  safeConnectionString = safeConnectionString.split('?')[0];
+}
 
-// Enable strict mode and foreign keys
-db.pragma('journal_mode = WAL'); // Better concurrency
-db.pragma('foreign_keys = ON');
+// Connect to the free Neon.tech PostgreSQL database
+const pool = new Pool({
+  connectionString: safeConnectionString,
+  ssl: {
+    rejectUnauthorized: false // Required for secure cloud connections
+  }
+});
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    role TEXT DEFAULT 'admin',
-    verified INTEGER DEFAULT 0,
-    otp TEXT,
-    otp_expiry INTEGER
-  );
+async function initDb() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255),
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        verified INTEGER DEFAULT 0,
+        otp VARCHAR(10),
+        otp_expiry BIGINT
+      );
+      
+      CREATE TABLE IF NOT EXISTS products (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255),
+        sku VARCHAR(100),
+        price NUMERIC(10, 2),
+        stock INTEGER DEFAULT 0,
+        gst NUMERIC(5, 2) DEFAULT 0,
+        lowStockThreshold INTEGER DEFAULT 10
+      );
 
-  CREATE TABLE IF NOT EXISTS products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    sku TEXT NOT NULL,
-    price REAL CHECK(price >= 0),
-    stock INTEGER CHECK(stock >= 0), -- Critical constraint to prevent negative stock
-    gst REAL DEFAULT 0,
-    hsn_code TEXT,
-    lowStockThreshold INTEGER DEFAULT 10,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE(user_id, sku)
-  );
+      CREATE TABLE IF NOT EXISTS customers (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255),
+        email VARCHAR(255),
+        contact VARCHAR(50),
+        address TEXT,
+        gstin VARCHAR(50)
+      );
 
-  CREATE TABLE IF NOT EXISTS inventory_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    product_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    change_amount INTEGER NOT NULL,
-    reason TEXT NOT NULL,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(product_id) REFERENCES products(id) ON DELETE CASCADE
-  );
+      CREATE TABLE IF NOT EXISTS bills (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        invoiceNumber VARCHAR(100),
+        customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+        discount NUMERIC(10, 2) DEFAULT 0,
+        discountType VARCHAR(20) DEFAULT 'flat',
+        paymentMethod VARCHAR(50),
+        totalAmount NUMERIC(10, 2),
+        items JSONB,
+        date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
 
-  CREATE TABLE IF NOT EXISTS customers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    email TEXT,
-    contact TEXT,
-    address TEXT,
-    gstin TEXT,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-  );
+      CREATE TABLE IF NOT EXISTS settings (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+        name VARCHAR(255),
+        gstin VARCHAR(50),
+        address TEXT
+      );
+    `);
+    console.log("[DATABASE] Cloud PostgreSQL Initialized Successfully.");
+  } catch (err) {
+    console.error("[DATABASE] Initialization Failed. Check DATABASE_URL.", err);
+  }
+}
 
-  CREATE TABLE IF NOT EXISTS bills (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    invoiceNumber TEXT NOT NULL,
-    customer_id INTEGER,
-    date TEXT NOT NULL,
-    totalAmount REAL CHECK(totalAmount >= 0),
-    paymentMethod TEXT NOT NULL,
-    items TEXT NOT NULL,
-    discount REAL DEFAULT 0,
-    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY(customer_id) REFERENCES customers(id) ON DELETE SET NULL,
-    UNIQUE(user_id, invoiceNumber)
-  );
-`);
+initDb();
 
-db.exec(`CREATE INDEX IF NOT EXISTS idx_bills_user_date ON bills (user_id, date);`);
-db.exec(`CREATE INDEX IF NOT EXISTS idx_products_user ON products (user_id);`);
-
-module.exports = db;
+module.exports = {
+  query: (text, params) => pool.query(text, params),
+};

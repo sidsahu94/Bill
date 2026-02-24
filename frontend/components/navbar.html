@@ -2,9 +2,7 @@
   <div class="container w-100 d-flex justify-content-between align-items-center">
     
     <a href="/" class="text-decoration-none d-flex align-items-center gap-2">
-      <div style="width: 32px; height: 32px; background: var(--gold-metallic); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
-      </div>
+      <img src="/icons/icon-192.png" alt="Bill Executive Logo" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-gold); object-fit: cover;">
       <span style="font-weight: 800; font-size: 1.2rem; letter-spacing: -0.02em; color: var(--text-primary);">BILL</span>
     </a>
 
@@ -18,6 +16,11 @@
     </div>
 
     <div class="d-none d-md-flex align-items-center gap-3">
+      <button class="saas-btn pwa-install-btn" style="display: none; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--border-gold); color: var(--gold-metallic); padding: 6px 12px; font-size: 0.75rem;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Install App
+      </button>
+
       <a class="saas-nav-link px-2" href="/pages/settings.html" title="Settings">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
       </a>
@@ -38,10 +41,12 @@
 <div id="drawerOverlay" class="drawer-overlay"></div>
 <aside id="mobileDrawer" class="mobile-drawer">
   <div class="d-flex justify-content-between align-items-center mb-5">
+    
     <div class="d-flex align-items-center gap-2">
-      <div style="width: 24px; height: 24px; background: var(--gold-metallic); border-radius: 6px;"></div>
-      <span class="fw-bold">BILL</span>
+      <img src="/icons/icon-192.png" alt="Bill Executive Logo" style="width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border-gold); object-fit: cover;">
+      <span class="fw-bold text-white">BILL</span>
     </div>
+
     <button id="mobileMenuClose" style="background:none; border:none; color: var(--text-secondary); font-size: 2rem; cursor: pointer;">&times;</button>
   </div>
   
@@ -56,10 +61,14 @@
   </div>
 
   <div class="d-flex flex-column gap-3 mt-4 pt-4" style="border-top: 1px solid var(--border-glass);">
+    <button class="saas-btn pwa-install-btn w-100 mb-2" style="display: none; background: rgba(212, 175, 55, 0.15); border: 1px solid var(--border-gold); color: var(--gold-metallic);">
+      Install Native App
+    </button>
+
     <a id="mobLoginBtn" href="/pages/login.html" class="saas-btn saas-btn-secondary w-100">Log In</a>
     <a id="mobRegisterBtn" href="/pages/register.html" class="saas-btn saas-btn-primary w-100">Register</a>
     
-    <span id="mobUsername" class="d-none fw-bold text-center text-gold"></span>
+    <span id="mobUsername" class="d-none fw-bold text-center text-gold" style="font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase;"></span>
     <button id="mobLogoutBtn" class="saas-btn saas-btn-secondary w-100 d-none">Logout</button>
   </div>
 </aside>

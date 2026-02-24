@@ -1,5 +1,5 @@
 // frontend/js/history.js
-// Elite Ledger Controller
+// Elite Paginated Ledger Controller
 
 function makeHeaders(json = true) {
   const token = localStorage.getItem('token');
@@ -9,7 +9,6 @@ function makeHeaders(json = true) {
   return headers;
 }
 
-// Elite Toast Notification System
 function showToast(message, type = 'success') {
   let container = document.getElementById('toastContainer');
   if (!container) {
@@ -33,43 +32,123 @@ function showToast(message, type = 'success') {
   setTimeout(() => { const el = document.getElementById(toastId); if (el) { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; setTimeout(() => el.remove(), 300); } }, 4000);
 }
 
-let billsCache = [];
+// Pagination State
+let currentPage = 1;
+const limit = 50;
+let hasMoreData = false;
+let currentFilters = { search: '', date: '', payment: '' };
+let billsCache = []; // Kept for local PDF generation
 
-document.addEventListener('DOMContentLoaded', loadBills);
+document.addEventListener('DOMContentLoaded', () => {
+  setupFilterListeners();
+  setupLoadMoreButton();
+  fetchLedgerData(true); // Initial load (reset table)
+});
 
-async function loadBills() {
+function setupFilterListeners() {
+  let debounceTimer;
+  const triggerFilter = () => {
+    currentPage = 1; // Reset to page 1 on new filter
+    currentFilters = {
+      search: document.getElementById('searchInvoice').value.trim(),
+      date: document.getElementById('filterDate').value,
+      payment: document.getElementById('filterPayment').value
+    };
+    fetchLedgerData(true);
+  };
+
+  // Debounce text search to prevent spamming the server
+  document.getElementById('searchInvoice').addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(triggerFilter, 400);
+  });
+
+  document.getElementById('filterDate').addEventListener('change', triggerFilter);
+  document.getElementById('filterPayment').addEventListener('change', triggerFilter);
+}
+
+function setupLoadMoreButton() {
+  const container = document.querySelector('.saas-card.overflow-hidden');
+  const btnHtml = `
+    <div id="loadMoreContainer" class="p-4 text-center border-top" style="border-color: var(--border-glass) !important; display: none;">
+      <button id="loadMoreBtn" class="saas-btn saas-btn-secondary px-5 py-2">Load Older Entries</button>
+    </div>
+  `;
+  container.insertAdjacentHTML('beforeend', btnHtml);
+  
+  document.getElementById('loadMoreBtn').addEventListener('click', () => {
+    currentPage++;
+    fetchLedgerData(false); // Append data
+  });
+}
+
+async function fetchLedgerData(resetTable = false) {
+  const tbody = document.querySelector('#billsTable tbody');
+  const loadMoreContainer = document.getElementById('loadMoreContainer');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+
+  if (resetTable) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted-custom py-5"><div class="saas-spinner mx-auto mb-2"></div>Decrypting ledger data...</td></tr>`;
+    billsCache = [];
+  } else {
+    loadMoreBtn.disabled = true;
+    loadMoreBtn.innerHTML = `<div class="saas-spinner mx-auto" style="width: 14px; height: 14px; border-width: 2px;"></div>`;
+  }
+
   try {
-    const res = await fetch('/api/billing', { headers: makeHeaders(false) });
+    // Construct Query Parameters
+    const params = new URLSearchParams({
+      page: currentPage,
+      limit: limit,
+      search: currentFilters.search,
+      date: currentFilters.date,
+      payment: currentFilters.payment
+    });
+
+    const res = await fetch(`/api/billing?${params.toString()}`, { headers: makeHeaders(false) });
     if (!res.ok) {
         if(res.status === 401) window.location.replace('/pages/login.html');
         throw new Error('Failed to load ledger');
     }
-    billsCache = await res.json();
-    renderTable(billsCache);
+    
+    const responseData = await res.json();
+    const bills = responseData.data;
+    hasMoreData = responseData.pagination.hasMore;
 
-    document.getElementById('searchInvoice').addEventListener('input', filterBills);
-    document.getElementById('filterDate').addEventListener('change', filterBills);
-    document.getElementById('filterPayment').addEventListener('change', filterBills);
+    if (resetTable) {
+      billsCache = bills;
+      tbody.innerHTML = '';
+    } else {
+      billsCache = [...billsCache, ...bills];
+    }
+    
+    if (billsCache.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted-custom py-5">No transactions recorded matching your parameters.</td></tr>`;
+      loadMoreContainer.style.display = 'none';
+      return;
+    }
+
+    renderTableRows(bills, tbody);
+
+    // Handle Pagination UI
+    loadMoreContainer.style.display = hasMoreData ? 'block' : 'none';
+    loadMoreBtn.disabled = false;
+    loadMoreBtn.innerHTML = `Load Older Entries`;
+
   } catch (err) {
     console.error('loadBills error', err);
-    document.querySelector('#billsTable tbody').innerHTML = `<tr><td colspan="6" class="text-center" style="color: var(--error); padding: 40px;">Ledger decryption failed. Check authorization.</td></tr>`;
+    if (resetTable) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="color: var(--error); padding: 40px;">Ledger decryption failed. Check connection.</td></tr>`;
+    }
   }
 }
 
-function renderTable(data) {
-  const tbody = document.querySelector('#billsTable tbody');
-  tbody.innerHTML = '';
-  
-  if(data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted-custom py-5">No transactions recorded in ledger.</td></tr>`;
-      return;
-  }
-
+function renderTableRows(data, tbody) {
   data.forEach(bill => {
     const tr = document.createElement('tr');
     
     let customerName = 'Standard Walk-in';
-    if (bill.customer_id && bill.customer) {
+    if (bill.customer_id && bill.customer && bill.customer.name) {
         customerName = bill.customer.name;
     }
 
@@ -78,9 +157,9 @@ function renderTable(data) {
 
     tr.innerHTML = `
       <td data-label="Document ID"><span class="fw-bold" style="color: var(--gold-metallic); font-family: monospace;">${bill.invoiceNumber}</span></td>
-      <td data-label="Entity" class="text-white fw-bold">${customerName}</td>
+      <td data-label="Entity" class="text-white fw-bold">${escapeHtml(customerName)}</td>
       <td data-label="Timestamp" style="color: var(--text-secondary);">${dateStr}</td>
-      <td data-label="Channel"><span style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-glass); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; color: var(--text-secondary); letter-spacing: 0.05em; text-transform: uppercase;">${bill.paymentMethod || 'N/A'}</span></td>
+      <td data-label="Channel"><span style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-glass); padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; color: var(--text-secondary); letter-spacing: 0.05em; text-transform: uppercase;">${escapeHtml(bill.paymentMethod || 'N/A')}</span></td>
       <td data-label="Settlement (₹)" class="fw-bold" style="color: var(--emerald-hwb); font-size: 1.1rem;">${totalStr}</td>
       <td data-label="Actions" class="text-end">
         <div class="d-flex gap-2 justify-content-end justify-content-md-start">
@@ -98,35 +177,49 @@ function renderTable(data) {
             showToast('Document Engine offline.', 'error');
         }
     });
-    tr.querySelector('.deleteBtn').addEventListener('click', () => deleteBill(bill.id, bill.invoiceNumber));
+    
+    tr.querySelector('.deleteBtn').addEventListener('click', () => deleteBill(bill.id, bill.invoiceNumber, tr));
   });
 }
 
-function filterBills() {
-  const keyword = document.getElementById('searchInvoice').value.toLowerCase();
-  const date = document.getElementById('filterDate').value;
-  const payment = document.getElementById('filterPayment').value;
-
-  const filtered = billsCache.filter(b => {
-    const custName = b.customer ? b.customer.name.toLowerCase() : '';
-    const matchesKeyword = (b.invoiceNumber || '').toLowerCase().includes(keyword) || custName.includes(keyword);
-    const matchesDate = date ? new Date(b.date).toISOString().slice(0, 10) === date : true;
-    const matchesPayment = payment ? b.paymentMethod === payment : true;
-    return matchesKeyword && matchesDate && matchesPayment;
-  });
-  renderTable(filtered);
-}
-
-async function deleteBill(id, invNum) {
+async function deleteBill(id, invNum, trElement) {
   if (!confirm(`Authorized to void document ${invNum}? This will reverse asset allocation.`)) return;
+  
+  const btn = trElement.querySelector('.deleteBtn');
+  const originalText = btn.innerText;
+  btn.disabled = true;
+  btn.innerText = 'Voiding...';
+
   try {
     const res = await fetch(`/api/billing/${id}`, { method: 'DELETE', headers: makeHeaders(true) });
     if (!res.ok) throw new Error('Void failed');
-    billsCache = billsCache.filter(b => String(b.id) !== String(id));
-    renderTable(billsCache);
+    
     showToast(`Document ${invNum} voided successfully.`);
+    trElement.style.opacity = '0.5';
+    trElement.style.pointerEvents = 'none';
+    
+    // Smooth remove
+    setTimeout(() => {
+      trElement.remove();
+      // Remove from cache
+      billsCache = billsCache.filter(b => String(b.id) !== String(id));
+      
+      // If table is now empty, refresh
+      if (document.querySelectorAll('#billsTable tbody tr').length === 0) {
+        fetchLedgerData(true);
+      }
+    }, 500);
+
   } catch (err) {
     console.error('deleteBill error', err);
-    showToast('Failed to void document.', 'error');
+    showToast('Failed to void document. System lock active.', 'error');
+    btn.disabled = false;
+    btn.innerText = originalText;
   }
+}
+
+function escapeHtml(unsafe) { 
+  return String(unsafe || '').replace(/[&<"'>]/g, function(m) { 
+    return ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'}[m]);
+  });
 }
