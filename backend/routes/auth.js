@@ -35,16 +35,19 @@ const otpLimiter = rateLimit({
 // ==========================================
 let transporter = null;
 try {
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
     transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: Number(process.env.SMTP_PORT) === 465, // True for 465, false for 587
+      host: 'smtp.gmail.com',
+      port: 465, // Force 465 for immediate secure SSL 
+      secure: true, 
       requireTLS: true,
       auth: { 
         user: process.env.SMTP_USER, 
         pass: process.env.SMTP_PASS 
       },
+      // ---> THE PRODUCTION FIX FOR RENDER <---
+      // Forces Node.js to use IPv4. Google blocks cloud IPv6 connections.
+      family: 4, 
       tls: {
         // Do not fail on invalid certs in cloud environments
         rejectUnauthorized: false
